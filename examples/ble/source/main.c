@@ -78,10 +78,12 @@ int main(void)
     nrf_gpio_cfg_output(BSP_LED_1);
     nrf_gpio_cfg_output(BSP_LED_2);
     nrf_gpio_cfg_output(BSP_LED_3);
-    nrf_gpio_pin_set(BSP_LED_0);
-    nrf_gpio_pin_set(BSP_LED_1);
-    nrf_gpio_pin_set(BSP_LED_2);
-    nrf_gpio_pin_set(BSP_LED_3);
+	nrf_gpio_cfg_output(BSP_LED_4);
+    nrf_gpio_pin_clear(BSP_LED_0);
+    nrf_gpio_pin_clear(BSP_LED_1);
+    nrf_gpio_pin_clear(BSP_LED_2);
+    nrf_gpio_pin_clear(BSP_LED_3);
+	nrf_gpio_pin_clear(BSP_LED_4);
 
     UNUSED_VARIABLE(xTaskCreate( vLed0Function, "L0", configMINIMAL_STACK_SIZE + 200, NULL, 2, &xLed0Handle ));    // LED0 task creation
     xLed1Handle = xTimerCreate( "L1", TIMER_PERIOD, pdTRUE, NULL, vLed1Callback );                                 // LED1 timer creation

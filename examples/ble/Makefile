@@ -115,17 +115,17 @@ ASMFLAGS += -DBOARD_CUSTOM
 ASMFLAGS += -DBSP_DEFINES_ONLY
 
 #default target - first one defined
-default: clean nrf51422_xxac
+default: clean nrf51822_xxac
 
 #building all targets
 all: clean
 	$(NO_ECHO)$(MAKE) -f $(MAKEFILE_NAME) -C $(MAKEFILE_DIR) -e cleanobj
-	$(NO_ECHO)$(MAKE) -f $(MAKEFILE_NAME) -C $(MAKEFILE_DIR) -e nrf51422_xxac
+	$(NO_ECHO)$(MAKE) -f $(MAKEFILE_NAME) -C $(MAKEFILE_DIR) -e nrf51822_xxac
 
 #target for printing all targets
 help:
 	@echo following targets are available:
-	@echo 	nrf51422_xxac
+	@echo 	nrf51822_xxac
 
 C_SOURCE_FILE_NAMES = $(notdir $(C_SOURCE_FILES))
 C_PATHS = $(call remduplicates, $(dir $(C_SOURCE_FILES) ) )
@@ -140,10 +140,10 @@ vpath %.s $(ASM_PATHS)
 
 OBJECTS = $(C_OBJECTS) $(ASM_OBJECTS)
 
-nrf51422_xxac: OUTPUT_FILENAME := nrf51822_ble
-nrf51422_xxac: LINKER_SCRIPT = $(TEMPLATE_PATH)/nrf51_xxac.ld
+nrf51822_xxac: OUTPUT_FILENAME := nrf51822_xxac
+nrf51822_xxac: LINKER_SCRIPT = $(TEMPLATE_PATH)/nrf51_xxac.ld
 
-nrf51422_xxac: $(BUILD_DIRECTORIES) $(OBJECTS)
+nrf51822_xxac: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo Linking target: $(OUTPUT_FILENAME).out
 	$(NO_ECHO)$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) -lm -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
 	$(NO_ECHO)$(MAKE) -f $(MAKEFILE_NAME) -C $(MAKEFILE_DIR) -e finalize
@@ -196,7 +196,7 @@ clean:
 
 cleanobj:
 	$(RM) $(BUILD_DIRECTORIES)/*.o
-flash: nrf51422_xxac
+flash: nrf51822_xxac
 	@echo Flashing: $(OUTPUT_BINARY_DIRECTORY)/$<.hex
 	nrfjprog --program $(OUTPUT_BINARY_DIRECTORY)/$<.hex -f nrf51  --chiperase
 	nrfjprog --reset -f nrf51
