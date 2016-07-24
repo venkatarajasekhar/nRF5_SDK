@@ -1,11 +1,11 @@
-PROJECT_NAME := bluetooth_low_energy
+PROJECT_NAME := nrf51822_ble
 
 export OUTPUT_FILENAME
 
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) ) 
 
-TEMPLATE_PATH = ../../components/toolchain/gcc
+TEMPLATE_PATH = ../../../components/toolchain/gcc
 ifeq ($(OS),Windows_NT)
 include $(TEMPLATE_PATH)/Makefile.windows
 else
@@ -37,47 +37,47 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 
 #source common to all targets
 C_SOURCE_FILES += \
-$(abspath ../../components/libraries/util/app_error.c) \
-$(abspath ../../components/libraries/util/app_error_weak.c) \
-$(abspath ../../components/libraries/util/app_util_platform.c) \
-$(abspath ../../components/libraries/util/nrf_assert.c) \
-$(abspath ../../components/drivers_nrf/clock/nrf_drv_clock.c) \
-$(abspath ../../components/drivers_nrf/common/nrf_drv_common.c) \
-$(abspath ../../components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c) \
-$(abspath ../../components/drivers_nrf/nrf_soc_nosd/nrf_soc.c) \
-$(abspath ../../components/toolchain/system_nrf51.c) \
-$(abspath ../../external/freertos/source/croutine.c) \
-$(abspath ../../external/freertos/source/event_groups.c) \
-$(abspath ../../external/freertos/source/portable/MemMang/heap_1.c) \
-$(abspath ../../external/freertos/source/list.c) \
-$(abspath ../../external/freertos/portable/GCC/nrf51/port.c) \
-$(abspath ../../external/freertos/portable/CMSIS/nrf51/port_cmsis.c) \
-$(abspath ../../external/freertos/portable/CMSIS/nrf51/port_cmsis_systick.c) \
-$(abspath ../../external/freertos/source/queue.c) \
-$(abspath ../../external/freertos/source/tasks.c) \
-$(abspath ../../external/freertos/source/timers.c) \
-$(abspath ./source/main.c) \
+$(abspath ../../../components/libraries/util/app_error.c) \
+$(abspath ../../../components/libraries/util/app_error_weak.c) \
+$(abspath ../../../components/libraries/util/app_util_platform.c) \
+$(abspath ../../../components/libraries/util/nrf_assert.c) \
+$(abspath ../../../components/drivers_nrf/clock/nrf_drv_clock.c) \
+$(abspath ../../../components/drivers_nrf/common/nrf_drv_common.c) \
+$(abspath ../../../components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c) \
+$(abspath ../../../components/drivers_nrf/nrf_soc_nosd/nrf_soc.c) \
+$(abspath ../../../components/toolchain/system_nrf51.c) \
+$(abspath ../../../external/freertos/source/croutine.c) \
+$(abspath ../../../external/freertos/source/event_groups.c) \
+$(abspath ../../../external/freertos/source/portable/MemMang/heap_1.c) \
+$(abspath ../../../external/freertos/source/list.c) \
+$(abspath ../../../external/freertos/portable/GCC/nrf51/port.c) \
+$(abspath ../../../external/freertos/portable/CMSIS/nrf51/port_cmsis.c) \
+$(abspath ../../../external/freertos/portable/CMSIS/nrf51/port_cmsis_systick.c) \
+$(abspath ../../../external/freertos/source/queue.c) \
+$(abspath ../../../external/freertos/source/tasks.c) \
+$(abspath ../../../external/freertos/source/timers.c) \
+$(abspath ../source/main.c) \
 
 #assembly files common to all targets
-ASM_SOURCE_FILES  = $(abspath ../../components/toolchain/gcc/gcc_startup_nrf51.s)
+ASM_SOURCE_FILES  = $(abspath ../../../components/toolchain/gcc/gcc_startup_nrf51.s)
 
 #includes common to all targets
-INC_PATHS  = -I$(abspath ./config)
-INC_PATHS += -I$(abspath ./include)
-INC_PATHS += -I$(abspath ../bsp)
-INC_PATHS += -I$(abspath ../../components/drivers_nrf/nrf_soc_nosd)
-INC_PATHS += -I$(abspath ../../components/drivers_nrf/common)
-INC_PATHS += -I$(abspath ../../components/drivers_nrf/hal)
-INC_PATHS += -I$(abspath ../../components/drivers_nrf/clock)
-INC_PATHS += -I$(abspath ../../components/libraries/util)
-INC_PATHS += -I$(abspath ../../components/toolchain)
-INC_PATHS += -I$(abspath ../../components/toolchain/gcc)
-INC_PATHS += -I$(abspath ../../components/toolchain/CMSIS/Include)
-INC_PATHS += -I$(abspath ../../components/device)
-INC_PATHS += -I$(abspath ../../external/freertos/portable/CMSIS/nrf51)
-INC_PATHS += -I$(abspath ../../external/freertos/source/include)
-INC_PATHS += -I$(abspath ../../external/freertos/portable/GCC/nrf51)
-INC_PATHS += -I$(abspath ../../external/freertos/config)
+INC_PATHS  = -I$(abspath ../config)
+INC_PATHS += -I$(abspath ../include)
+INC_PATHS += -I$(abspath ../../bsp)
+INC_PATHS += -I$(abspath ../../../components/drivers_nrf/nrf_soc_nosd)
+INC_PATHS += -I$(abspath ../../../components/drivers_nrf/common)
+INC_PATHS += -I$(abspath ../../../components/drivers_nrf/hal)
+INC_PATHS += -I$(abspath ../../../components/drivers_nrf/clock)
+INC_PATHS += -I$(abspath ../../../components/libraries/util)
+INC_PATHS += -I$(abspath ../../../components/toolchain)
+INC_PATHS += -I$(abspath ../../../components/toolchain/gcc)
+INC_PATHS += -I$(abspath ../../../components/toolchain/CMSIS/Include)
+INC_PATHS += -I$(abspath ../../../components/device)
+INC_PATHS += -I$(abspath ../../../external/freertos/portable/CMSIS/nrf51)
+INC_PATHS += -I$(abspath ../../../external/freertos/source/include)
+INC_PATHS += -I$(abspath ../../../external/freertos/portable/GCC/nrf51)
+INC_PATHS += -I$(abspath ../../../external/freertos/config)
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)
@@ -93,7 +93,7 @@ CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DBSP_DEFINES_ONLY
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
-CFLAGS += -Wall -Werror -O3 -g3
+CFLAGS += -Wall -Werror -O0 -g3
 CFLAGS += -mfloat-abi=soft
 # keep every function in separate section. This will allow linker to dump unused functions
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing
