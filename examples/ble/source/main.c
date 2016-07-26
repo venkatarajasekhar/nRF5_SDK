@@ -30,6 +30,7 @@
 #include "bsp.h"
 #include "nordic_common.h"
 #include "nrf_gpio.h"
+#include "nrf_error.h"
 #include "nrf_drv_clock.h"
 #include "sdk_errors.h"
 #include "app_error.h"
