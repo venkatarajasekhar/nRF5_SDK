@@ -43,7 +43,7 @@
 		<link>
 			<name>source</name>
 			<type>2</type>
-			<locationURI>copy_PARENT1/source</locationURI>
+			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
 			<name>toolchain</name>
@@ -99,6 +99,11 @@
 			<name>libraries/nrf_assert.c</name>
 			<type>1</type>
 			<locationURI>copy_PARENT/components/libraries/util/nrf_assert.c</locationURI>
+		</link>
+		<link>
+			<name>source/main.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/source/main.c</locationURI>
 		</link>
 		<link>
 			<name>toolchain/system_nrf51.c</name>
