@@ -21,6 +21,10 @@
  *
  */
 
+/*********************************************************************
+ * INCLUDES
+ */
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -35,14 +39,33 @@
 #include "sdk_errors.h"
 #include "app_error.h"
 
+/*********************************************************************
+ * CONSTANTS
+ */
 
 #define SYSTEM_INDICATOR_LED_INTERVAL     5000     /**< Sensor Contact Detected toggle interval (ms). */
 #define APP_TIMER_PRESCALER                  0     /**< Value of the RTC1 PRESCALER register. */
 #define APP_TIMER_OP_QUEUE_SIZE           0x04     /**< Size of timer operation queues. */
 #define OSTIMER_WAIT_FOR_QUEUE               2     /**< Number of ticks to wait for the timer queue to be ready */
 
+/*********************************************************************
+ * TYPEDEFS
+ */
+
+/*********************************************************************
+ * LOCAL VARIABLES
+ */
+
 static TimerHandle_t m_system_indicator_timer;     /**< Definition of system indicator led timer. */
 static TaskHandle_t  m_ble_stack_thread;           /**< Definition of BLE stack thread. */
+
+/*********************************************************************
+ * GLOBAL VARIABLES
+ */
+
+/*********************************************************************
+ * FUNCTIONS PROTOTYPE
+ */
 
 static void clock_initialization();
 static void ble_stack_thread(void * arg);
@@ -58,6 +81,11 @@ static void services_init(void);
 static void conn_params_init(void);
 static void application_timers_start(void);
 
+/**
+  * @brief  Main program
+  * @param  None
+  * @retval None
+  */
 
 int main(void)
 {
