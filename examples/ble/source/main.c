@@ -91,7 +91,8 @@ int main(void)
 {
     clock_initialization();
     // Start execution.
-    if(pdPASS != xTaskCreate(ble_stack_thread, "BLE", 256, NULL, 1, &m_ble_stack_thread))
+    if(pdPASS != xTaskCreate(ble_stack_thread, "BLE", APP_TASK_BLE_STACK_SIZE,
+                             NULL, APP_TASK_BLE_PRIORITY, &m_ble_stack_thread))
     {
         APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
     }
@@ -176,7 +177,8 @@ static void timers_init(void)
     APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);
 
     // Create timers.
-    m_system_indicator_timer = xTimerCreate("LED", SYSTEM_INDICATOR_LED_INTERVAL, pdTRUE, NULL, system_indicator_timeout_handler);
+    m_system_indicator_timer = xTimerCreate("LED", SYSTEM_INDICATOR_LED_INTERVAL,
+                                 pdTRUE, NULL, system_indicator_timeout_handler);
 
     /* Error checking */
     if( NULL == m_system_indicator_timer )
