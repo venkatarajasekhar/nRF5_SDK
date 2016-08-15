@@ -9,10 +9,10 @@
  * the file.
  *
  */
-#ifndef PCA10028_H
-#define PCA10028_H
+#ifndef CUSTOM_BOARD_H
+#define CUSTOM_BOARD_H
 
-// LEDs definitions for PCA10028
+// LEDs definitions for custom board
 #define LEDS_NUMBER    5
 
 #define LED_START      18

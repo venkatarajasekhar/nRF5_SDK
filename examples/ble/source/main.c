@@ -214,6 +214,7 @@ static void buttons_leds_init(bool * p_erase_bonds)
 static void system_indicator_timeout_handler(void * p_context)
 {
     UNUSED_PARAMETER(p_context);
+    LEDS_INVERT(BSP_LED_4_MASK);
 }
 
 /**@brief Function for initializing the BLE stack.
