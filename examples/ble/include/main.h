@@ -15,7 +15,7 @@
 #include "sdk_errors.h"
 #include "app_error.h"
 
-#define APP_TASK_BLE_STACK_SIZE            256     /**< Size of stack for BLE task. */
-#define APP_TASK_BLE_PRIORITY                1     /**< priority of BLE task. */
+#define APP_TASK_BLE_STACK_SIZE            256     /**< Size of the BLE task stack. */
+#define APP_TASK_BLE_PRIORITY                1     /**< Priority of the BLE task. */
 
 #endif
