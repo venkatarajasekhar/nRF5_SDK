@@ -33,7 +33,7 @@
 
 #define SYSTEM_INDICATOR_LED_INTERVAL     5000     /**< Sensor Contact Detected toggle interval (ms). */
 #define APP_TIMER_PRESCALER                  0     /**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_OP_QUEUE_SIZE           0x04     /**< Size of timer operation queues. */
+#define APP_TIMER_OP_QUEUE_SIZE              0     /**< Size of timer operation queues. */
 #define OSTIMER_WAIT_FOR_QUEUE               2     /**< Number of ticks to wait for the timer queue to be ready */
 
 /*********************************************************************
@@ -162,7 +162,9 @@ static void ble_stack_thread(void * arg)
 static void timers_init(void)
 {
     // Initialize timer module.
-    APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);
+    uint32_t err_code = app_timer_init(APP_TIMER_PRESCALER,
+                                       APP_TIMER_OP_QUEUE_SIZE, NULL, NULL);
+    APP_ERROR_CHECK(err_code);
 
     // Create timers.
     m_system_indicator_timer = xTimerCreate("LED", SYSTEM_INDICATOR_LED_INTERVAL,
