@@ -14,19 +14,24 @@
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/drivers_nrf/common"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/drivers_nrf/hal"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/drivers_nrf/clock"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/drivers_nrf/pstorage"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/drivers_nrf/ble_flash"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/drivers_nrf/gpiote"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/util"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/timer"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/button"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/toolchain"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/toolchain/gcc"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/toolchain/CMSIS/Include"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/device"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/external/freertos/portable/CMSIS/nrf51"/>
-						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/external/freertos/source/include"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/external/freertos/portable/GCC/nrf51"/>
-						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/external/freertos/config"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/external/freertos/source/include"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/external/segger_rtt"/>
 						<entry kind="macro" name="BOARD_CUSTOM" value=""/>
-						<entry kind="macro" name="BSP_DEFINES_ONLY" value=""/>
 						<entry kind="macro" name="FREERTOS" value=""/>
 						<entry kind="macro" name="NRF51" value=""/>
+						<entry kind="macro" name="NRF_LOG_USES_RTT" value="1"/>
 					</resource>
 					<resource project-relative-path="freertos/source/croutine.c">
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/examples/ble/config"/>
