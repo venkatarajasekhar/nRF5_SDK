@@ -41,6 +41,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>segger_rtt</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>source</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -58,12 +63,12 @@
 		<link>
 			<name>drivers_nrf/nrf_drv_clock.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/drivers_nrf/clock/nrf_drv_clock.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/drivers_nrf/clock/nrf_drv_clock.c</locationURI>
 		</link>
 		<link>
 			<name>drivers_nrf/nrf_drv_common.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/drivers_nrf/common/nrf_drv_common.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/drivers_nrf/common/nrf_drv_common.c</locationURI>
 		</link>
 		<link>
 			<name>drivers_nrf/nrf_drv_gpiote.c</name>
@@ -73,12 +78,12 @@
 		<link>
 			<name>drivers_nrf/nrf_nvic.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c</locationURI>
 		</link>
 		<link>
 			<name>drivers_nrf/nrf_soc.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/drivers_nrf/nrf_soc_nosd/nrf_soc.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/drivers_nrf/nrf_soc_nosd/nrf_soc.c</locationURI>
 		</link>
 		<link>
 			<name>drivers_nrf/pstorage_nosd.c</name>
@@ -103,12 +108,12 @@
 		<link>
 			<name>libraries/app_error.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/libraries/util/app_error.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/util/app_error.c</locationURI>
 		</link>
 		<link>
 			<name>libraries/app_error_weak.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/libraries/util/app_error_weak.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/util/app_error_weak.c</locationURI>
 		</link>
 		<link>
 			<name>libraries/app_timer_freertos.c</name>
@@ -118,12 +123,42 @@
 		<link>
 			<name>libraries/app_util_platform.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/libraries/util/app_util_platform.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/util/app_util_platform.c</locationURI>
+		</link>
+		<link>
+			<name>libraries/hardfault_handler_gcc.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/hardfault/nrf51/handler/hardfault_handler_gcc.c</locationURI>
+		</link>
+		<link>
+			<name>libraries/hardfault_implementation.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/hardfault/hardfault_implementation.c</locationURI>
 		</link>
 		<link>
 			<name>libraries/nrf_assert.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/libraries/util/nrf_assert.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/util/nrf_assert.c</locationURI>
+		</link>
+		<link>
+			<name>libraries/nrf_log.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/util/nrf_log.c</locationURI>
+		</link>
+		<link>
+			<name>segger_rtt/RTT_Syscalls_GCC.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/external/segger_rtt/RTT_Syscalls_GCC.c</locationURI>
+		</link>
+		<link>
+			<name>segger_rtt/SEGGER_RTT.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/external/segger_rtt/SEGGER_RTT.c</locationURI>
+		</link>
+		<link>
+			<name>segger_rtt/SEGGER_RTT_printf.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/external/segger_rtt/SEGGER_RTT_printf.c</locationURI>
 		</link>
 		<link>
 			<name>source/bsp.c</name>
@@ -143,57 +178,57 @@
 		<link>
 			<name>toolchain/system_nrf51.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/components/toolchain/system_nrf51.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/components/toolchain/system_nrf51.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/portable/heap_1.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/source/portable/MemMang/heap_1.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/source/portable/MemMang/heap_1.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/portable/port.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/portable/GCC/nrf51/port.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/portable/GCC/nrf51/port.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/portable/port_cmsis.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/portable/CMSIS/nrf51/port_cmsis.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/portable/CMSIS/nrf51/port_cmsis.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/portable/port_cmsis_systick.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/portable/CMSIS/nrf51/port_cmsis_systick.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/portable/CMSIS/nrf51/port_cmsis_systick.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/source/croutine.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/source/croutine.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/source/croutine.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/source/event_groups.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/source/event_groups.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/source/event_groups.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/source/list.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/source/list.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/source/list.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/source/queue.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/source/queue.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/source/queue.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/source/tasks.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/source/tasks.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/source/tasks.c</locationURI>
 		</link>
 		<link>
 			<name>freertos/source/timers.c</name>
 			<type>1</type>
-			<locationURI>copy_PARENT/external/freertos/source/timers.c</locationURI>
+			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/source/timers.c</locationURI>
 		</link>
 	</linkedResources>
 	<variableList>

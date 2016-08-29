@@ -44,6 +44,8 @@ $(abspath ../../../components/libraries/util/nrf_assert.c) \
 $(abspath ../../../components/libraries/util/nrf_log.c) \
 $(abspath ../../../components/libraries/timer/app_timer_freertos.c) \
 $(abspath ../../../components/libraries/button/app_button.c) \
+$(abspath ../../../components/libraries/hardfault/hardfault_implementation.c) \
+$(abspath ../../../components/libraries/hardfault/nrf51/handler/hardfault_handler_gcc.c) \
 $(abspath ../../../components/drivers_nrf/clock/nrf_drv_clock.c) \
 $(abspath ../../../components/drivers_nrf/common/nrf_drv_common.c) \
 $(abspath ../../../components/drivers_nrf/nrf_soc_nosd/nrf_nvic.c) \
@@ -86,6 +88,7 @@ INC_PATHS += -I$(abspath ../../../components/drivers_nrf/gpiote)
 INC_PATHS += -I$(abspath ../../../components/libraries/util)
 INC_PATHS += -I$(abspath ../../../components/libraries/timer)
 INC_PATHS += -I$(abspath ../../../components/libraries/button)
+INC_PATHS += -I$(abspath ../../../components/libraries/hardfault)
 INC_PATHS += -I$(abspath ../../../components/toolchain)
 INC_PATHS += -I$(abspath ../../../components/toolchain/gcc)
 INC_PATHS += -I$(abspath ../../../components/toolchain/CMSIS/Include)

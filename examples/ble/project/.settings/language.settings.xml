@@ -20,6 +20,7 @@
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/util"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/timer"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/button"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/hardfault"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/toolchain"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/toolchain/gcc"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/toolchain/CMSIS/Include"/>
