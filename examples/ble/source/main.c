@@ -332,6 +332,23 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t *file_name)
   }
 }
 
+/* Function for processing HardFault exceptions */
+void HardFault_process(HardFault_stack_t *p_stack)
+{
+    NRF_LOG_PRINTF("R0  = 0x%08X\r\n", p_stack->r0);
+    NRF_LOG_PRINTF("R1  = 0x%08X\r\n", p_stack->r1);
+    NRF_LOG_PRINTF("R2  = 0x%08X\r\n", p_stack->r2);
+    NRF_LOG_PRINTF("R12 = 0x%08X\r\n", p_stack->r12);
+    NRF_LOG_PRINTF("LR  = 0x%08X\r\n", p_stack->lr);
+    NRF_LOG_PRINTF("PC  = 0x%08X\r\n", p_stack->pc);
+    NRF_LOG_PRINTF("PSR = 0x%08X\r\n", p_stack->psr);
+
+    while(1)
+    {
+        /* Loop forever */
+    }
+}
+
 /**
  *@}
  **/

@@ -17,6 +17,7 @@
 #include "sdk_errors.h"
 #include "app_error.h"
 #include "app_timer.h"
+#include "hardfault.h"
 
 #define APP_TASK_BLE_STACK_SIZE            256     /**< Size of the BLE task stack. */
 #define APP_TASK_BLE_PRIORITY                1     /**< Priority of the BLE task. */
