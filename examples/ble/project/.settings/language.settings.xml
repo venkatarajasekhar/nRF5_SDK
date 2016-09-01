@@ -18,6 +18,7 @@
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/drivers_nrf/ble_flash"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/drivers_nrf/gpiote"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/util"/>
+						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/ic_info"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/timer"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/button"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/components/libraries/hardfault"/>
@@ -30,6 +31,7 @@
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/external/freertos/source/include"/>
 						<entry kind="includePath" name="/home/freddie/workspace/nRF5_SDK/external/segger_rtt"/>
 						<entry kind="macro" name="BOARD_CUSTOM" value=""/>
+						<entry kind="macro" name="DEBUG_NRF_USER" value=""/>
 						<entry kind="macro" name="FREERTOS" value=""/>
 						<entry kind="macro" name="NRF51" value=""/>
 						<entry kind="macro" name="NRF_LOG_USES_RTT" value="1"/>

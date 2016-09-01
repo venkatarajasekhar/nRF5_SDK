@@ -185,7 +185,7 @@ BaseType_t xPortStartScheduler( void )
     /* This port can be used on all revisions of the Cortex-M7 core other than
     the r0p1 parts.  r0p1 parts should use the port from the
     /source/portable/GCC/ARM_CM7/r0p1 directory. */
-    configASSERT( SCB->CPUID != portCORTEX_M0_r0p0_ID );
+    configASSERT( SCB->CPUID == portCORTEX_M0_r0p0_ID );
 
     /* Make PendSV the lowest priority interrupts. */
     NVIC_SetPriority(PendSV_IRQn, configKERNEL_INTERRUPT_PRIORITY);

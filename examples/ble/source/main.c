@@ -70,6 +70,7 @@ static void advertising_start(void);
 static void services_init(void);
 static void conn_params_init(void);
 static void application_timers_start(void);
+static void system_info_output(void);
 
 /**
   * @brief  Main program
@@ -80,7 +81,8 @@ static void application_timers_start(void);
 int main(void)
 {
     clock_initialization();
-    // Start execution.
+    system_info_output();
+    /* Start execution */
     if(pdPASS != xTaskCreate(ble_stack_thread, "BLE", APP_TASK_BLE_STACK_SIZE,
                              NULL, APP_TASK_BLE_PRIORITY, &m_ble_stack_thread))
     {
@@ -90,7 +92,7 @@ int main(void)
     /* Activate deep sleep mode */
     SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
-    NRF_LOG_PRINTF("Start FreeRTOS scheduler.\r\n");
+    /* Start FreeRTOS scheduler */
     vTaskStartScheduler();
 
     while (true)
@@ -323,18 +325,40 @@ static void application_timers_start(void)
     }
 }
 
+/**@brief Function for printing system infomation.
+ */
+static void system_info_output(void)
+{
+    nrf_ic_info_t ic_info;
+    uint8_t varient, revision;
+
+    nrf_ic_info_get(&ic_info);
+    varient = (SCB->CPUID & SCB_CPUID_VARIANT_Msk) >> SCB_CPUID_VARIANT_Pos;
+    revision = (SCB->CPUID & SCB_CPUID_REVISION_Msk) >> SCB_CPUID_REVISION_Pos;
+
+    NRF_LOG_PRINTF("\r\nnRF51822(Rev %d) Features:\r\n", ic_info.ic_revision);
+    NRF_LOG_PRINTF("- ARM Cortex-M0 r%dp%d core\r\n", varient, revision);
+    NRF_LOG_PRINTF("- %dkB Flash + %dkB RAM\r\n", ic_info.flash_size, ic_info.ram_size);
+}
+
 /* Used in debug mode for assertions */
 void assert_nrf_callback(uint16_t line_num, const uint8_t *file_name)
 {
-  while(1)
-  {
-    /* Loop forever */
-  }
+    taskDISABLE_INTERRUPTS();
+    NRF_LOG_PRINTF("\r\nAssert failed:\r\n");
+    NRF_LOG_PRINTF("File Name:   %s\r\n", file_name);
+    NRF_LOG_PRINTF("Line Number: %d\r\n", line_num);
+
+    while(1)
+    {
+        /* Loop forever */
+    }
 }
 
 /* Function for processing HardFault exceptions */
 void HardFault_process(HardFault_stack_t *p_stack)
 {
+	NRF_LOG_PRINTF("\r\nIn Hard Fault Handler\r\n");
     NRF_LOG_PRINTF("R0  = 0x%08X\r\n", p_stack->r0);
     NRF_LOG_PRINTF("R1  = 0x%08X\r\n", p_stack->r1);
     NRF_LOG_PRINTF("R2  = 0x%08X\r\n", p_stack->r2);

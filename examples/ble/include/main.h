@@ -14,6 +14,7 @@
 #include "nrf_gpio.h"
 #include "nrf_error.h"
 #include "nrf_drv_clock.h"
+#include "nrf_ic_info.h"
 #include "sdk_errors.h"
 #include "app_error.h"
 #include "app_timer.h"

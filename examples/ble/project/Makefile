@@ -42,6 +42,7 @@ $(abspath ../../../components/libraries/util/app_error_weak.c) \
 $(abspath ../../../components/libraries/util/app_util_platform.c) \
 $(abspath ../../../components/libraries/util/nrf_assert.c) \
 $(abspath ../../../components/libraries/util/nrf_log.c) \
+$(abspath ../../../components/libraries/ic_info/nrf_ic_info.c) \
 $(abspath ../../../components/libraries/timer/app_timer_freertos.c) \
 $(abspath ../../../components/libraries/button/app_button.c) \
 $(abspath ../../../components/libraries/hardfault/hardfault_implementation.c) \
@@ -86,6 +87,7 @@ INC_PATHS += -I$(abspath ../../../components/drivers_nrf/pstorage)
 INC_PATHS += -I$(abspath ../../../components/drivers_nrf/ble_flash)
 INC_PATHS += -I$(abspath ../../../components/drivers_nrf/gpiote)
 INC_PATHS += -I$(abspath ../../../components/libraries/util)
+INC_PATHS += -I$(abspath ../../../components/libraries/ic_info)
 INC_PATHS += -I$(abspath ../../../components/libraries/timer)
 INC_PATHS += -I$(abspath ../../../components/libraries/button)
 INC_PATHS += -I$(abspath ../../../components/libraries/hardfault)
@@ -109,6 +111,7 @@ BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LIS
 CFLAGS  = -DNRF51
 CFLAGS += -DFREERTOS
 CFLAGS += -DBOARD_CUSTOM
+CFLAGS += -DDEBUG_NRF_USER
 CFLAGS += -DNRF_LOG_USES_RTT=1
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
