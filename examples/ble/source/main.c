@@ -31,10 +31,10 @@
  * CONSTANTS
  */
 
-#define SYSTEM_INDICATOR_LED_INTERVAL     5000     /**< Sensor Contact Detected toggle interval (ms). */
-#define APP_TIMER_PRESCALER                  0     /**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_OP_QUEUE_SIZE              0     /**< Size of timer operation queues. */
-#define OSTIMER_WAIT_FOR_QUEUE               2     /**< Number of ticks to wait for the timer queue to be ready */
+#define SYSTEM_INDICATOR_LED_INTERVAL        5000                      /**< Sensor Contact Detected toggle interval (ms). */
+#define APP_TIMER_PRESCALER                  portNRF_RTC_PRESCALER     /**< Value of the RTC1 PRESCALER register. */
+#define APP_TIMER_OP_QUEUE_SIZE              0                         /**< Size of timer operation queues. */
+#define OSTIMER_WAIT_FOR_QUEUE               2                         /**< Number of ticks to wait for the timer queue to be ready */
 
 /*********************************************************************
  * TYPEDEFS
@@ -106,28 +106,10 @@ int main(void)
  */
 static void clock_initialization()
 {
-    /* Start 16 MHz crystal oscillator */
-    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
-    NRF_CLOCK->TASKS_HFCLKSTART    = 1;
-
-    /* Wait for the external oscillator to start up */
-    while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0)
-    {
-        // Do nothing.
-    }
-
-    /* Start low frequency crystal oscillator for app_timer(used by bsp)*/
-    NRF_CLOCK->LFCLKSRC            = (CLOCK_LFCLKSRC_SRC_Xtal << CLOCK_LFCLKSRC_SRC_Pos);
-    NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
-    NRF_CLOCK->TASKS_LFCLKSTART    = 1;
-
-    while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0)
-    {
-        // Do nothing.
-    }
-
     ret_code_t err_code = nrf_drv_clock_init();
     APP_ERROR_CHECK(err_code);
+    /* Start 16 MHz crystal oscillator */
+    nrf_drv_clock_hfclk_request(NULL);
 }
 
 /**@brief Thread for handling the Application's BLE Stack events.

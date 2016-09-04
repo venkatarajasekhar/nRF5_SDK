@@ -89,11 +89,11 @@
  * See http://www.freertos.org/a00110.html.
  *----------------------------------------------------------*/
 
-#define configTICK_SOURCE FREERTOS_USE_RTC
+#define configTICK_SOURCE                                                         FREERTOS_USE_RTC
 
-#define configUSE_PREEMPTION 1
+#define configUSE_PREEMPTION                                                      1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION                                   0
-#define configUSE_TICKLESS_IDLE 1
+#define configUSE_TICKLESS_IDLE                                                   1
 #define configCPU_CLOCK_HZ                                                        ( SystemCoreClock )
 #define configTICK_RATE_HZ                                                        1000
 #define configMAX_PRIORITIES                                                      ( 3 )
@@ -128,7 +128,7 @@
 #define configMAX_CO_ROUTINE_PRIORITIES                                           ( 2 )
 
 /* Software timer definitions. */
-#define configUSE_TIMERS 1
+#define configUSE_TIMERS                                                          1
 #define configTIMER_TASK_PRIORITY                                                 ( 2 )
 #define configTIMER_QUEUE_LENGTH                                                  32
 #define configTIMER_TASK_STACK_DEPTH                                              ( 80 )
