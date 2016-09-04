@@ -125,6 +125,9 @@ static void clock_initialization()
     {
         // Do nothing.
     }
+
+    ret_code_t err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
 }
 
 /**@brief Thread for handling the Application's BLE Stack events.
@@ -336,8 +339,8 @@ static void system_info_output(void)
     varient = (SCB->CPUID & SCB_CPUID_VARIANT_Msk) >> SCB_CPUID_VARIANT_Pos;
     revision = (SCB->CPUID & SCB_CPUID_REVISION_Msk) >> SCB_CPUID_REVISION_Pos;
 
-    NRF_LOG_PRINTF("\r\nnRF51822(Rev %d) Features:\r\n", ic_info.ic_revision);
-    NRF_LOG_PRINTF("- ARM Cortex-M0 r%dp%d core\r\n", varient, revision);
+    NRF_LOG_PRINTF("\r\nnRF51822(Rev.%d) Features:\r\n", ic_info.ic_revision);
+    NRF_LOG_PRINTF("- ARM Cortex-M0 r%dp%d Core\r\n", varient, revision);
     NRF_LOG_PRINTF("- %dkB Flash + %dkB RAM\r\n", ic_info.flash_size, ic_info.ram_size);
 }
 
