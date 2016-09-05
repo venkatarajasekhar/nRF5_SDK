@@ -230,7 +230,7 @@ static void sleep_mode_enter(void)
 static void system_indicator_timeout_handler(void * p_context)
 {
     UNUSED_PARAMETER(p_context);
-    LEDS_INVERT(BSP_LED_4_MASK);
+    //LEDS_INVERT(BSP_LED_4_MASK);
 }
 
 /**@brief Function for initializing the BLE stack.
