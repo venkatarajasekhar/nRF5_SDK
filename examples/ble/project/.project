@@ -141,6 +141,11 @@
 			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/util/nrf_assert.c</locationURI>
 		</link>
 		<link>
+			<name>libraries/nrf_ic_info.c</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/ic_info/nrf_ic_info.c</locationURI>
+		</link>
+		<link>
 			<name>libraries/nrf_log.c</name>
 			<type>1</type>
 			<locationURI>PARENT-3-PROJECT_LOC/components/libraries/util/nrf_log.c</locationURI>
@@ -231,14 +236,4 @@
 			<locationURI>PARENT-3-PROJECT_LOC/external/freertos/source/timers.c</locationURI>
 		</link>
 	</linkedResources>
-	<variableList>
-		<variable>
-			<name>copy_PARENT</name>
-			<value>$%7BPARENT-1-PROJECT_LOC%7D/nRF5_SDK</value>
-		</variable>
-		<variable>
-			<name>copy_PARENT1</name>
-			<value>$%7Bcopy_PARENT%7D/examples/ble</value>
-		</variable>
-	</variableList>
 </projectDescription>
