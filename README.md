@@ -21,3 +21,7 @@ FreeRTOS provides methods for multiple threads or tasks, mutexes, semaphores and
 SEGGER's Real Time Transfer (RTT) is the new technology for interactive user I/O in embedded applications. It combines the advantages of SWO and semihosting at very high performance.
 
 With RTT it is possible to output information from the target microcontroller as well as sending input to the application at a very high speed without affecting the target's real time behavior.
+
+### NimBLE
+
+NimBLE complies with Bluetooth Core Specification 4.2 which introduces several new features that make it an ideal wireless technology for the Internet of Things (IoT).
