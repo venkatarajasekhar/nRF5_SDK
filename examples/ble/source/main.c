@@ -45,7 +45,7 @@
  */
 
 static TimerHandle_t m_system_indicator_timer;     /**< Definition of system indicator led timer. */
-static TaskHandle_t  m_ble_stack_thread;           /**< Definition of BLE stack thread. */
+static TaskHandle_t  m_ble_app_thread;           /**< Definition of BLE stack thread. */
 
 /*********************************************************************
  * GLOBAL VARIABLES
@@ -83,8 +83,8 @@ int main(void)
     clock_initialization();
     system_info_output();
     /* Start execution */
-    if(pdPASS != xTaskCreate(ble_stack_thread, "BLE", APP_TASK_BLE_STACK_SIZE,
-                             NULL, APP_TASK_BLE_PRIORITY, &m_ble_stack_thread))
+    if(pdPASS != xTaskCreate(ble_stack_thread, "ble_app", APP_TASK_BLE_STACK_SIZE,
+                             NULL, APP_TASK_BLE_PRIORITY, &m_ble_app_thread))
     {
         APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
     }
@@ -239,7 +239,22 @@ static void system_indicator_timeout_handler(void * p_context)
  */
 static void ble_stack_init(void)
 {
-    NRF_RNG->TASKS_START = 1;
+    int rc;
+    /* Set cputime to count at 1 usec increments */
+    rc = cputime_init(APP_TASK_CPU_TIMER_PRIORITY);
+    ASSERT(rc == 0);
+
+    /* Initialize the statistics package */
+    rc = stats_module_init();
+    ASSERT(rc == 0);
+
+    /* Initialize the BLE LL */
+    rc = ble_ll_init(APP_TASK_LINK_PRIORITY, 7, 260);
+    ASSERT(rc == 0);
+
+    /* Initialize the BLE host. */
+    rc = ble_hs_init(&app_evq, NULL);
+    ASSERT(rc == 0);
 }
 
 /**@brief Function for the Device Manager initialization.

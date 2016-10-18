@@ -57,7 +57,7 @@
 /**@brief The interrupt priorities available to the application while the SoftDevice is active. */
 typedef enum
 {
-#ifdef SOFTDEVICE_PRESENT
+#ifndef SOFTDEVICE_PRESENT
     APP_IRQ_PRIORITY_HIGHEST = _PRIO_SD_HIGH,
 #else
     APP_IRQ_PRIORITY_HIGHEST = _PRIO_APP_HIGH,

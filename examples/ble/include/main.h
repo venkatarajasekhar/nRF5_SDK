@@ -21,6 +21,8 @@
 #include "hardfault.h"
 
 #define APP_TASK_BLE_STACK_SIZE            256     /**< Size of the BLE task stack. */
-#define APP_TASK_BLE_PRIORITY                1     /**< Priority of the BLE task. */
+#define APP_TASK_BLE_PRIORITY                2     /**< Priority of the BLE task. */
+#define APP_TASK_CPU_TIMER_PRIORITY          1     /**< Priority of the CPU timer task. */
+#define APP_TASK_LINK_PRIORITY               3     /**< Priority of the BLE LL task. */
 
 #endif

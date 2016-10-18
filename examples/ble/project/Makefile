@@ -113,6 +113,7 @@ CFLAGS += -DFREERTOS
 CFLAGS += -DBOARD_CUSTOM
 CFLAGS += -DDEBUG_NRF_USER
 CFLAGS += -DNRF_LOG_USES_RTT=1
+CFLAGS += -DSTATS_NAME_ENABLE
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
 CFLAGS += -Wall -Werror -O0 -g3

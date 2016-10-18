@@ -380,7 +380,7 @@ cputime_timer_stop(struct cpu_timer *timer)
 static void
 cputime_event_handler(nrf_timer_event_t event_type, void * p_context)
 {
-    static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
     switch(event_type) {
         case CPUTIMER_SET_EVENT:
