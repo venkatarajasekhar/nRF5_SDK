@@ -68,7 +68,10 @@ struct os_mbuf;
 #define BLE_PHY_ERR_TX_LATE         (5)
 
 /* Maximun PDU length. Includes LL header of 2 bytes and 255 bytes payload. */
-#define BLE_PHY_MAX_PDU_LEN         (257)
+#define BLE_PHY_MAX_PDU_LEN         (39)
+
+/* BLE packet CRC plynomial */
+#define BLE_PHY_CRC_POLY            (0x0100065B)
 
 /* Wait for response timer */
 typedef void (*ble_phy_tx_end_func)(void *arg);

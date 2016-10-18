@@ -41,19 +41,33 @@ extern uint8_t g_nrf_num_irks;
 extern uint32_t g_nrf_irk_list[];
 
 /* To disable all radio interrupts */
-#define NRF_RADIO_IRQ_MASK_ALL  (0x34FF)
+#define NRF_RADIO_IRQ_MASK_ALL  (RADIO_INTENCLR_READY_Msk    | \
+                                 RADIO_INTENCLR_ADDRESS_Msk  | \
+                                 RADIO_INTENCLR_PAYLOAD_Msk  | \
+                                 RADIO_INTENCLR_END_Msk      | \
+                                 RADIO_INTENCLR_DISABLED_Msk | \
+                                 RADIO_INTENCLR_DEVMATCH_Msk | \
+                                 RADIO_INTENCLR_DEVMISS_Msk  | \
+                                 RADIO_INTENCLR_RSSIEND_Msk  | \
+                                 RADIO_INTENCLR_BCMATCH_Msk)
 
 /*
  * We configure the nrf with a 1 byte S0 field, 8 bit length field, and
  * zero bit S1 field. The preamble is 8 bits long.
  */
-#define NRF_LFLEN_BITS          (8)
-#define NRF_S0_LEN              (1)
+#define NRF_LFLEN               (5)
+#define NRF_S0LEN               (1)
+#define NRF_S1LEN               (3)
 
 /* Maximum length of frames */
-#define NRF_MAXLEN              (255)
+#define NRF_MAXLEN              (37)
+#define NRF_STATLEN             (0)
 #define NRF_BALEN               (3)     /* For base address of 3 bytes */
 #define NRF_RX_START_OFFSET     (5)
+
+/* Access address */
+#define NRF_BASE0(addr)         (((uint32_t)addr) << 8)
+#define NRF_PREFIX0(addr)       (((uint32_t)addr) >> 24)
 
 /* Maximum tx power */
 #define NRF_TX_PWR_MAX_DBM      (4)
@@ -97,7 +111,8 @@ static uint32_t g_ble_phy_enc_buf[(NRF_ENC_BUF_SIZE + 3) / 4];
 #endif
 
 /* Statistics */
-STATS_SECT_START(ble_phy_stats)
+struct stats_ble_phy_stats {
+    struct stats_hdr s_hdr;
     STATS_SECT_ENTRY(phy_isrs)
     STATS_SECT_ENTRY(tx_good)
     STATS_SECT_ENTRY(tx_fail)
@@ -111,10 +126,10 @@ STATS_SECT_START(ble_phy_stats)
     STATS_SECT_ENTRY(radio_state_errs)
     STATS_SECT_ENTRY(rx_hw_err)
     STATS_SECT_ENTRY(tx_hw_err)
-STATS_SECT_END
-STATS_SECT_DECL(ble_phy_stats) ble_phy_stats;
+};
+struct stats_ble_phy_stats STATS_VARIABLE(ble_phy_stats);
 
-STATS_NAME_START(ble_phy_stats)
+struct stats_name_map STATS_NAME_MAP_NAME(ble_phy_stats)[] = {
     STATS_NAME(ble_phy_stats, phy_isrs)
     STATS_NAME(ble_phy_stats, tx_good)
     STATS_NAME(ble_phy_stats, tx_fail)
@@ -128,7 +143,7 @@ STATS_NAME_START(ble_phy_stats)
     STATS_NAME(ble_phy_stats, radio_state_errs)
     STATS_NAME(ble_phy_stats, rx_hw_err)
     STATS_NAME(ble_phy_stats, tx_hw_err)
-STATS_NAME_END(ble_phy_stats)
+};
 
 /*
  * NOTE:
@@ -576,8 +591,8 @@ ble_phy_rx_start_isr(void)
     STATS_INC(ble_phy_stats, rx_starts);
 }
 
-static void
-ble_phy_isr(void)
+void
+RADIO_IRQHandler(void)
 {
     uint32_t irq_en;
 
@@ -617,19 +632,17 @@ int
 ble_phy_init(void)
 {
     int rc;
-    uint32_t os_tmo;
 
-    /* Make sure HFXO is started */
-    NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
-    NRF_CLOCK->TASKS_HFCLKSTART = 1;
-    os_tmo = os_time_get() + (5 * (1000 / OS_TICKS_PER_SEC));
-    while (1) {
-        if (NRF_CLOCK->EVENTS_HFCLKSTARTED) {
-            break;
-        }
-        if ((int32_t)(os_time_get() - os_tmo) > 0) {
-            return BLE_PHY_ERR_INIT;
-        }
+    // Handle BLE Radio tuning parameters from production for DTM if required.
+    // Only needed for DTM without SoftDevice, as the SoftDevice normally handles this.
+    // PCN-083.
+    if ( ((NRF_FICR->OVERRIDEEN) & FICR_OVERRIDEEN_BLE_1MBIT_Msk) == FICR_OVERRIDEEN_BLE_1MBIT_Override)
+    {
+        NRF_RADIO->OVERRIDE0 = NRF_FICR->BLE_1MBIT[0];
+        NRF_RADIO->OVERRIDE1 = NRF_FICR->BLE_1MBIT[1];
+        NRF_RADIO->OVERRIDE2 = NRF_FICR->BLE_1MBIT[2];
+        NRF_RADIO->OVERRIDE3 = NRF_FICR->BLE_1MBIT[3];
+        NRF_RADIO->OVERRIDE4 = NRF_FICR->BLE_1MBIT[4];
     }
 
     /* Set phy channel to an invalid channel so first set channel works */
@@ -644,29 +657,32 @@ ble_phy_init(void)
 
     /* Set configuration registers */
     NRF_RADIO->MODE = RADIO_MODE_MODE_Ble_1Mbit;
-    NRF_RADIO->PCNF0 = (NRF_LFLEN_BITS << RADIO_PCNF0_LFLEN_Pos) |
-                       (NRF_S0_LEN << RADIO_PCNF0_S0LEN_Pos);
+    NRF_RADIO->PCNF0 = (NRF_LFLEN << RADIO_PCNF0_LFLEN_Pos) |
+                       (NRF_S0LEN << RADIO_PCNF0_S0LEN_Pos) |
+                       (NRF_S1LEN << RADIO_PCNF0_S1LEN_Pos);
     /* XXX: should maxlen be 251 for encryption? */
-    NRF_RADIO->PCNF1 = NRF_MAXLEN |
+    NRF_RADIO->PCNF1 = (NRF_MAXLEN << RADIO_PCNF1_MAXLEN_Pos)   |
+                       (NRF_STATLEN << RADIO_PCNF1_STATLEN_Pos) |
+                       (NRF_BALEN << RADIO_PCNF1_BALEN_Pos)     |
                        (RADIO_PCNF1_ENDIAN_Little <<  RADIO_PCNF1_ENDIAN_Pos) |
-                       (NRF_BALEN << RADIO_PCNF1_BALEN_Pos) |
-                       RADIO_PCNF1_WHITEEN_Msk;
+                       (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);
 
     /* Set base0 with the advertising access address */
-    NRF_RADIO->BASE0 = (BLE_ACCESS_ADDR_ADV << 8) & 0xFFFFFF00;
-    NRF_RADIO->PREFIX0 = (BLE_ACCESS_ADDR_ADV >> 24) & 0xFF;
+    NRF_RADIO->BASE0 = NRF_BASE0(BLE_ACCESS_ADDR_ADV);
+    NRF_RADIO->PREFIX0 = NRF_PREFIX0(BLE_ACCESS_ADDR_ADV);
 
     /* Configure the CRC registers */
-    NRF_RADIO->CRCCNF = RADIO_CRCCNF_SKIPADDR_Msk | RADIO_CRCCNF_LEN_Three;
+    NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) |
+                        (RADIO_CRCCNF_SKIPADDR_Skip << RADIO_CRCCNF_SKIPADDR_Pos);
 
     /* Configure BLE poly */
-    NRF_RADIO->CRCPOLY = 0x0100065B;
+    NRF_RADIO->CRCPOLY = BLE_PHY_CRC_POLY;
 
     /* Configure IFS */
     NRF_RADIO->TIFS = BLE_LL_IFS;
 
     /* Captures tx/rx start in timer0 capture 1 */
-    NRF_PPI->CHENSET = PPI_CHEN_CH26_Msk;
+    nrf_ppi_channel_enable(PPI_CHEN_CH26_Pos);
 
 #if (BLE_LL_CFG_FEAT_LE_ENCRYPTION == 1)
     NRF_CCM->INTENCLR = 0xffffffff;
@@ -687,7 +703,6 @@ ble_phy_init(void)
 
     /* Set isr in vector table and enable interrupt */
     NVIC_SetPriority(RADIO_IRQn, 0);
-    NVIC_SetVector(RADIO_IRQn, (uint32_t)ble_phy_isr);
     NVIC_EnableIRQ(RADIO_IRQn);
 
     /* Register phy statistics */

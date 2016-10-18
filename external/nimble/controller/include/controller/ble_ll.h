@@ -40,7 +40,9 @@
 #define BLE_LL_WFR_USECS    (BLE_LL_IFS + 40 + 32)
 
 /* Packet queue header definition */
-STAILQ_HEAD(ble_ll_pkt_q, os_mbuf_pkthdr);
+struct ble_ll_pkt_q {
+    struct list_head pkt_hdr;
+}
 
 /*
  * Global Link Layer data object. There is only one Link Layer data object
@@ -80,7 +82,8 @@ struct ble_ll_obj
 extern struct ble_ll_obj g_ble_ll_data;
 
 /* Link layer statistics */
-STATS_SECT_START(ble_ll_stats)
+struct stats_ble_ll_stats {
+    struct stats_hdr s_hdr;
     STATS_SECT_ENTRY(hci_cmds)
     STATS_SECT_ENTRY(hci_cmd_errs)
     STATS_SECT_ENTRY(hci_events_sent)
@@ -112,8 +115,8 @@ STATS_SECT_START(ble_ll_stats)
     STATS_SECT_ENTRY(scan_req_txf)
     STATS_SECT_ENTRY(scan_req_txg)
     STATS_SECT_ENTRY(scan_rsp_txg)
-STATS_SECT_END
-extern STATS_SECT_DECL(ble_ll_stats) ble_ll_stats;
+};
+extern struct stats_ble_ll_stats STATS_VARIABLE(ble_ll_stats);
 
 /* States */
 #define BLE_LL_STATE_STANDBY        (0)

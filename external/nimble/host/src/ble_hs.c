@@ -350,7 +350,7 @@ ble_hs_event_handle(void *unused)
         }
         i++;
 
-        ev = os_eventq_poll(&evqp, 1, 0);
+        ev = os_eventq_get(evqp);
         if (ev == NULL) {
             break;
         }
