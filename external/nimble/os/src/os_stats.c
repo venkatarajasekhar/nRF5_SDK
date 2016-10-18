@@ -21,22 +21,22 @@
 
 #include <string.h>
 
-#include "stats/stats.h"
+#include "os/os_stats.h"
 
 #include <stdio.h>
 
-STATS_SECT_START(stats)
+struct stats_os_stats {
+    struct stats_hdr s_hdr;
     STATS_SECT_ENTRY(num_registered)
-STATS_SECT_END
+};
 
-STATS_SECT_DECL(stats) g_stats_stats;
+struct stats_os_stats STATS_VARIABLE(os_stats);
 
-STATS_NAME_START(stats)
-    STATS_NAME(stats, num_registered)
-STATS_NAME_END(stats)
+struct stats_name_map STATS_NAME_MAP_NAME(os_stats)[] = {
+    STATS_NAME(os_stats, num_registered)
+};
 
-STAILQ_HEAD(, stats_hdr) g_stats_registry =
-    STAILQ_HEAD_INITIALIZER(g_stats_registry);
+struct list_head stats_registry = LIST_HEAD_INIT(stats_registry);
 
 static uint8_t stats_module_inited;
 
@@ -116,14 +116,14 @@ stats_module_init(void)
     }
 #endif
 
-    rc = stats_init(STATS_HDR(g_stats_stats),
-                    STATS_SIZE_INIT_PARMS(g_stats_stats, STATS_SIZE_32),
-                    STATS_NAME_INIT_PARMS(stats));
+    rc = stats_init(STATS_HDR(os_stats),
+                    STATS_SIZE_INIT_PARMS(os_stats, STATS_SIZE_32),
+                    STATS_NAME_INIT_PARMS(os_stats));
     if (rc != 0) {
         goto err;
     }
 
-    rc = stats_register("stat", STATS_HDR(g_stats_stats));
+    rc = stats_register("os_stats", STATS_HDR(os_stats));
     if (rc != 0) {
         goto err;
     }
@@ -142,7 +142,7 @@ stats_module_reset(void)
 {
     stats_module_inited = 0;
 
-    STAILQ_INIT(&g_stats_registry);
+    INIT_LIST_HEAD(&stats_registry);
 }
 
 int
@@ -167,7 +167,7 @@ stats_group_walk(stats_group_walk_func_t walk_func, void *arg)
     struct stats_hdr *hdr;
     int rc;
 
-    STAILQ_FOREACH(hdr, &g_stats_registry, s_next) {
+    list_for_each_entry(hdr, &stats_registry, s_node) {
         rc = walk_func(hdr, arg);
         if (rc != 0) {
             goto err;
@@ -184,7 +184,7 @@ stats_group_find(char *name)
     struct stats_hdr *cur;
 
     cur = NULL;
-    STAILQ_FOREACH(cur, &g_stats_registry, s_next) {
+    list_for_each_entry(cur, &stats_registry, s_node) {
         if (!strcmp(cur->s_name, name)) {
             break;
         }
@@ -202,7 +202,7 @@ stats_register(char *name, struct stats_hdr *shdr)
     /* Don't allow duplicate entries, return an error if this stat
      * is already registered.
      */
-    STAILQ_FOREACH(cur, &g_stats_registry, s_next) {
+    list_for_each_entry(cur, &stats_registry, s_node) {
         if (!strcmp(cur->s_name, name)) {
             rc = -1;
             goto err;
@@ -211,9 +211,9 @@ stats_register(char *name, struct stats_hdr *shdr)
 
     shdr->s_name = name;
 
-    STAILQ_INSERT_TAIL(&g_stats_registry, shdr, s_next);
+    list_add_tail(&shdr->s_node, &stats_registry);
 
-    STATS_INC(g_stats_stats, num_registered);
+    STATS_INC(os_stats, num_registered);
 
     return (0);
 err:

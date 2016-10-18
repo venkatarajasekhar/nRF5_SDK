@@ -36,7 +36,7 @@ struct stats_hdr {
     struct stats_name_map *s_map;
     int s_map_cnt;
 #endif
-    STAILQ_ENTRY(stats_hdr) s_next;
+    struct list_head s_node;
 };
 
 #define STATS_SECT_DECL(__name)             \
