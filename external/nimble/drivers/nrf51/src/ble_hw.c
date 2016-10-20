@@ -225,8 +225,8 @@ ble_hw_encrypt_block(struct ble_encryption_block *ecb)
 /**
  * Random number generator ISR.
  */
-static void
-ble_rng_isr(void)
+void
+RNG_IRQHandler(void)
 {
     uint8_t rnum;
 
@@ -259,15 +259,14 @@ ble_hw_rng_init(ble_rng_isr_cb_t cb, int bias)
 {
     /* Set bias */
     if (bias) {
-        NRF_RNG->CONFIG = 1;
+        nrf_rng_error_correction_enable();
     } else {
-        NRF_RNG->CONFIG = 0;
+        nrf_rng_error_correction_disable();
     }
 
     /* If we were passed a function pointer we need to enable the interrupt */
     if (cb != NULL) {
         NVIC_SetPriority(RNG_IRQn, (1 << __NVIC_PRIO_BITS) - 1);
-        NVIC_SetVector(RNG_IRQn, (uint32_t)ble_rng_isr);
         NVIC_EnableIRQ(RNG_IRQn);
         g_ble_rng_isr_cb = cb;
     }
@@ -287,12 +286,12 @@ ble_hw_rng_start(void)
 
     /* No need for interrupt if there is no callback */
     OS_ENTER_CRITICAL(sr);
-    if (NRF_RNG->TASKS_START == 0) {
-        NRF_RNG->EVENTS_VALRDY = 0;
+    if (0 == *(nrf_rng_task_address_get(NRF_RNG_TASK_START))) {
+        nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
         if (g_ble_rng_isr_cb) {
-            NRF_RNG->INTENSET = 1;
+            nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
         }
-        NRF_RNG->TASKS_START = 1;
+        nrf_rng_task_trigger(NRF_RNG_TASK_START);
     }
     OS_EXIT_CRITICAL(sr);
 
@@ -311,9 +310,9 @@ ble_hw_rng_stop(void)
 
     /* No need for interrupt if there is no callback */
     OS_ENTER_CRITICAL(sr);
-    NRF_RNG->INTENCLR = 1;
-    NRF_RNG->TASKS_STOP = 1;
-    NRF_RNG->EVENTS_VALRDY = 0;
+    nrf_rng_int_disable(NRF_RNG_INT_VALRDY_MASK);
+    nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
+    nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
     OS_EXIT_CRITICAL(sr);
 
     return 0;
@@ -330,11 +329,11 @@ ble_hw_rng_read(void)
     uint8_t rnum;
 
     /* Wait for a sample */
-    while (NRF_RNG->EVENTS_VALRDY == 0) {
+    while (! nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
     }
 
-    NRF_RNG->EVENTS_VALRDY = 0;
-    rnum = (uint8_t)NRF_RNG->VALUE;
+    nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
+    rnum = nrf_rng_random_value_get();
 
     return rnum;
 }
