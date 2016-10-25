@@ -69,6 +69,9 @@ extern uint32_t g_nrf_irk_list[];
 #define NRF_BASE0(addr)         (((uint32_t)addr) << 8)
 #define NRF_PREFIX0(addr)       (((uint32_t)addr) >> 24)
 
+/* Radio channel frequency */
+#define NRF_FREQUENCY(freq)     (((freq) - 2400) & 0x0000007F)
+
 /* Maximum tx power */
 #define NRF_TX_PWR_MAX_DBM      (4)
 #define NRF_TX_PWR_MIN_DBM      (-40)
@@ -1071,12 +1074,12 @@ ble_phy_setchan(uint8_t chan, uint32_t access_addr, uint32_t crcinit)
     if (chan < BLE_PHY_NUM_DATA_CHANS) {
         if (chan < 11) {
             /* Data channel 0 starts at 2404. 0 - 10 are contiguous */
-            freq = (BLE_PHY_DATA_CHAN0_FREQ_MHZ - 2400) +
-                   (BLE_PHY_CHAN_SPACING_MHZ * chan);
+            freq = NRF_FREQUENCY(BLE_PHY_DATA_CHAN0_FREQ_MHZ +
+                                 BLE_PHY_CHAN_SPACING_MHZ * chan);
         } else {
-            /* Data channel 11 starts at 2428. 0 - 10 are contiguous */
-            freq = (BLE_PHY_DATA_CHAN0_FREQ_MHZ - 2400) +
-                   (BLE_PHY_CHAN_SPACING_MHZ * (chan + 1));
+            /* Data channel 11 starts at 2428. 11 - 36 are contiguous */
+            freq = NRF_FREQUENCY(BLE_PHY_DATA_CHAN0_FREQ_MHZ +
+                                 BLE_PHY_CHAN_SPACING_MHZ * (chan + 1));
         }
 
         /* Set current access address */
@@ -1093,13 +1096,14 @@ ble_phy_setchan(uint8_t chan, uint32_t access_addr, uint32_t crcinit)
         NRF_RADIO->CRCINIT = crcinit;
     } else {
         if (chan == 37) {
-            freq = BLE_PHY_CHAN_SPACING_MHZ;
+            /* This advertising channel is at 2402 MHz */
+            freq = NRF_FREQUENCY(2402);
         } else if (chan == 38) {
             /* This advertising channel is at 2426 MHz */
-            freq = BLE_PHY_CHAN_SPACING_MHZ * 13;
+            freq = NRF_FREQUENCY(2426);
         } else {
             /* This advertising channel is at 2480 MHz */
-            freq = BLE_PHY_CHAN_SPACING_MHZ * 40;
+            freq = NRF_FREQUENCY(2480);
         }
 
         /* Logical adddress 0 preconfigured */
