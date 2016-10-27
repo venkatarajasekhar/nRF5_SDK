@@ -66,8 +66,14 @@ extern uint32_t g_nrf_irk_list[];
 #define NRF_RX_START_OFFSET     (5)
 
 /* Access address */
-#define NRF_BASE0(addr)         (((uint32_t)addr) << 8)
-#define NRF_PREFIX0(addr)       (((uint32_t)addr) >> 24)
+#define NRF_BASE(addr)          ((uint32_t)addr << 8)
+#define NRF_PREFIX(addr,offset) (((uint32_t)addr & 0xFF000000) >> offset)
+#define NRF_AP0_OFFSET          24
+#define NRF_AP1_OFFSET          16
+
+/* Transmit address select */
+#define NRF_TXADDRESS0          (0 & RADIO_TXADDRESS_TXADDRESS_Msk)
+#define NRF_TXADDRESS1          (1 & RADIO_TXADDRESS_TXADDRESS_Msk)
 
 /* Radio channel frequency */
 #define NRF_FREQUENCY(freq)     (((freq) - 2400) & 0x0000007F)
@@ -652,8 +658,8 @@ ble_phy_init(void)
     g_ble_phy_data.phy_chan = BLE_PHY_NUM_CHANS;
 
     /* Toggle peripheral power to reset (just in case) */
-    NRF_RADIO->POWER = 0;
-    NRF_RADIO->POWER = 1;
+    NRF_RADIO->POWER = RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos;
+    NRF_RADIO->POWER = RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos;
 
     /* Disable all interrupts */
     NRF_RADIO->INTENCLR = NRF_RADIO_IRQ_MASK_ALL;
@@ -671,8 +677,8 @@ ble_phy_init(void)
                        (RADIO_PCNF1_WHITEEN_Enabled << RADIO_PCNF1_WHITEEN_Pos);
 
     /* Set base0 with the advertising access address */
-    NRF_RADIO->BASE0 = NRF_BASE0(BLE_ACCESS_ADDR_ADV);
-    NRF_RADIO->PREFIX0 = NRF_PREFIX0(BLE_ACCESS_ADDR_ADV);
+    NRF_RADIO->BASE0 = NRF_BASE(BLE_ACCESS_ADDR_ADV);
+    NRF_RADIO->PREFIX0 = NRF_PREFIX(BLE_ACCESS_ADDR_ADV, NRF_AP0_OFFSET);
 
     /* Configure the CRC registers */
     NRF_RADIO->CRCCNF = (RADIO_CRCCNF_LEN_Three << RADIO_CRCCNF_LEN_Pos) |
@@ -1087,12 +1093,12 @@ ble_phy_setchan(uint8_t chan, uint32_t access_addr, uint32_t crcinit)
 
         /* Configure logical address 1 and crcinit */
         prefix = NRF_RADIO->PREFIX0;
-        prefix &= 0xffff00ff;
-        prefix |= ((access_addr >> 24) & 0xFF) << 8;
-        NRF_RADIO->BASE1 = (access_addr << 8) & 0xFFFFFF00;
+        prefix &= ~RADIO_PREFIX0_AP1_Msk;
+        prefix |= NRF_PREFIX(access_addr, NRF_AP1_OFFSET);
+        NRF_RADIO->BASE1 = NRF_BASE(access_addr);
         NRF_RADIO->PREFIX0 = prefix;
-        NRF_RADIO->TXADDRESS = 1;
-        NRF_RADIO->RXADDRESSES = (1 << 1);
+        NRF_RADIO->TXADDRESS = NRF_TXADDRESS1;
+        NRF_RADIO->RXADDRESSES = RADIO_RXADDRESSES_ADDR1_Enabled << RADIO_RXADDRESSES_ADDR1_Pos;
         NRF_RADIO->CRCINIT = crcinit;
     } else {
         if (chan == 37) {
@@ -1107,8 +1113,8 @@ ble_phy_setchan(uint8_t chan, uint32_t access_addr, uint32_t crcinit)
         }
 
         /* Logical adddress 0 preconfigured */
-        NRF_RADIO->TXADDRESS = 0;
-        NRF_RADIO->RXADDRESSES = (1 << 0);
+        NRF_RADIO->TXADDRESS = NRF_TXADDRESS0;
+        NRF_RADIO->RXADDRESSES = RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos;
         NRF_RADIO->CRCINIT = BLE_LL_CRCINIT_ADV;
 
         /* Set current access address */
