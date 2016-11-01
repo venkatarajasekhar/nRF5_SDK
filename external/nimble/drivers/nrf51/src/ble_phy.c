@@ -52,8 +52,8 @@ extern uint32_t g_nrf_irk_list[];
                                  RADIO_INTENCLR_BCMATCH_Msk)
 
 /*
- * We configure the nrf with a 1 byte S0 field, 8 bit length field, and
- * zero bit S1 field. The preamble is 8 bits long.
+ * We configure the nrf with a 1 byte S0 field, 5 bit length field, and
+ * 3 bit S1 field. The preamble is 8 bits long.
  */
 #define NRF_LFLEN               (5)
 #define NRF_S0LEN               (1)
@@ -74,6 +74,10 @@ extern uint32_t g_nrf_irk_list[];
 /* Transmit address select */
 #define NRF_TXADDRESS0          (0 & RADIO_TXADDRESS_TXADDRESS_Msk)
 #define NRF_TXADDRESS1          (1 & RADIO_TXADDRESS_TXADDRESS_Msk)
+
+/* Reception address select */
+#define NRF_RXADDRESS0          (RADIO_RXADDRESSES_ADDR1_Enabled << RADIO_RXADDRESSES_ADDR1_Pos)
+#define NRF_RXADDRESS1          (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos)
 
 /* Radio channel frequency */
 #define NRF_FREQUENCY(freq)     (((freq) - 2400) & 0x0000007F)
@@ -658,8 +662,8 @@ ble_phy_init(void)
     g_ble_phy_data.phy_chan = BLE_PHY_NUM_CHANS;
 
     /* Toggle peripheral power to reset (just in case) */
-    NRF_RADIO->POWER = RADIO_POWER_POWER_Disabled << RADIO_POWER_POWER_Pos;
-    NRF_RADIO->POWER = RADIO_POWER_POWER_Enabled << RADIO_POWER_POWER_Pos;
+    NRF_RADIO->POWER &= ~RADIO_POWER_POWER_Msk;
+    NRF_RADIO->POWER |= RADIO_POWER_POWER_Msk;
 
     /* Disable all interrupts */
     NRF_RADIO->INTENCLR = NRF_RADIO_IRQ_MASK_ALL;
@@ -1098,7 +1102,7 @@ ble_phy_setchan(uint8_t chan, uint32_t access_addr, uint32_t crcinit)
         NRF_RADIO->BASE1 = NRF_BASE(access_addr);
         NRF_RADIO->PREFIX0 = prefix;
         NRF_RADIO->TXADDRESS = NRF_TXADDRESS1;
-        NRF_RADIO->RXADDRESSES = RADIO_RXADDRESSES_ADDR1_Enabled << RADIO_RXADDRESSES_ADDR1_Pos;
+        NRF_RADIO->RXADDRESSES = NRF_RXADDRESS1;
         NRF_RADIO->CRCINIT = crcinit;
     } else {
         if (chan == 37) {
@@ -1114,7 +1118,7 @@ ble_phy_setchan(uint8_t chan, uint32_t access_addr, uint32_t crcinit)
 
         /* Logical adddress 0 preconfigured */
         NRF_RADIO->TXADDRESS = NRF_TXADDRESS0;
-        NRF_RADIO->RXADDRESSES = RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos;
+        NRF_RADIO->RXADDRESSES = NRF_RXADDRESS0;
         NRF_RADIO->CRCINIT = BLE_LL_CRCINIT_ADV;
 
         /* Set current access address */

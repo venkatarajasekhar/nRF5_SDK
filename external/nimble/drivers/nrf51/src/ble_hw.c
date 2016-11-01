@@ -47,6 +47,12 @@ ble_rng_isr_cb_t g_ble_rng_isr_cb;
 #define NRF_IRK_LIST_ENTRIES    (16)
 #endif
 
+#define NRF_DAB_SIZE            (4)
+#define NRF_DACNF_ENA_MASK      (RADIO_DACNF_ENA0_Msk | RADIO_DACNF_ENA1_Msk | \
+                                 RADIO_DACNF_ENA2_Msk | RADIO_DACNF_ENA3_Msk | \
+                                 RADIO_DACNF_ENA4_Msk | RADIO_DACNF_ENA5_Msk | \
+                                 RADIO_DACNF_ENA6_Msk | RADIO_DACNF_ENA7_Msk)
+
 /* NOTE: each entry is 16 bytes long. */
 uint32_t g_nrf_irk_list[NRF_IRK_LIST_ENTRIES * 4];
 
@@ -82,13 +88,13 @@ ble_hw_whitelist_add(uint8_t *addr, uint8_t addr_type)
     uint32_t mask;
 
     /* Find first ununsed device address match element */
-    mask = 0x01;
+    mask = RADIO_DACNF_ENA0_Msk;
     for (i = 0; i < BLE_HW_WHITE_LIST_SIZE; ++i) {
         if ((mask & g_ble_hw_whitelist_mask) == 0) {
             NRF_RADIO->DAB[i] = le32toh(addr);
-            NRF_RADIO->DAP[i] = le16toh(addr + 4);
+            NRF_RADIO->DAP[i] = le16toh(addr + NRF_DAB_SIZE);
             if (addr_type == BLE_ADDR_TYPE_RANDOM) {
-                NRF_RADIO->DACNF |= (mask << 8);
+                NRF_RADIO->DACNF |= (mask << BLE_HW_WHITE_LIST_SIZE);
             }
             g_ble_hw_whitelist_mask |= mask;
             return BLE_ERR_SUCCESS;
@@ -118,22 +124,17 @@ ble_hw_whitelist_rmv(uint8_t *addr, uint8_t addr_type)
 
     /* Find first ununsed device address match element */
     dab = le32toh(addr);
-    dap = le16toh(addr + 4);
-    txadd = NRF_RADIO->DACNF >> 8;
-    mask = 0x01;
+    dap = le16toh(addr + NRF_DAB_SIZE);
+    txadd = NRF_RADIO->DACNF >> BLE_HW_WHITE_LIST_SIZE;
+    mask = RADIO_DACNF_ENA0_Msk;
     for (i = 0; i < BLE_HW_WHITE_LIST_SIZE; ++i) {
-        if (mask & g_ble_hw_whitelist_mask) {
-            if ((dab == NRF_RADIO->DAB[i]) && (dap == NRF_RADIO->DAP[i])) {
-                cfg_addr = txadd & mask;
-                if (addr_type == BLE_ADDR_TYPE_RANDOM) {
-                    if (cfg_addr != 0) {
-                        break;
-                    }
-                } else {
-                    if (cfg_addr == 0) {
-                        break;
-                    }
-                }
+        if ((mask & g_ble_hw_whitelist_mask) &&
+            (dab == NRF_RADIO->DAB[i]) &&
+            (dap == NRF_RADIO->DAP[i])) {
+            cfg_addr = txadd & mask;
+            if (((addr_type == BLE_ADDR_TYPE_RANDOM) && (cfg_addr != 0)) ||
+                ((addr_type == BLE_ADDR_TYPE_PUBLIC) && (cfg_addr == 0))) {
+                break;
             }
         }
         mask <<= 1;
@@ -173,7 +174,7 @@ void
 ble_hw_whitelist_disable(void)
 {
     /* Disable all whitelist devices */
-    NRF_RADIO->DACNF &= 0x0000ff00;
+    NRF_RADIO->DACNF &= ~NRF_DACNF_ENA_MASK;
 }
 
 /**
