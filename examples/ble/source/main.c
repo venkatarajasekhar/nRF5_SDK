@@ -62,7 +62,7 @@ static void system_indicator_timeout_handler(void * p_context);
 static void buttons_leds_init(bool * p_erase_bonds);
 static void bsp_event_handler(bsp_event_t event);
 static void sleep_mode_enter(void);
-static void ble_stack_init(void);
+static void ble_stack_init(struct os_eventq *app_evq);
 static void device_manager_init(bool erase_bonds);
 static void gap_params_init(void);
 static void advertising_init(void);
@@ -121,14 +121,15 @@ static void clock_initialization()
  */
 static void ble_stack_thread(void * arg)
 {
-    bool      erase_bonds;
+    bool             erase_bonds;
+	struct os_eventq stack_evq;
 
     UNUSED_PARAMETER(arg);
 
     // Initialize.
     timers_init();
     buttons_leds_init(&erase_bonds);
-    ble_stack_init();
+    ble_stack_init(&stack_evq);
     device_manager_init(erase_bonds);
     gap_params_init();
     advertising_init();
@@ -237,7 +238,7 @@ static void system_indicator_timeout_handler(void * p_context)
  *
  * @details Initializes the SoftDevice and the BLE event interrupt.
  */
-static void ble_stack_init(void)
+static void ble_stack_init(struct os_eventq *app_evq)
 {
     int rc;
     /* Set cputime to count at 1 usec increments */
@@ -253,7 +254,7 @@ static void ble_stack_init(void)
     ASSERT(rc == 0);
 
     /* Initialize the BLE host. */
-    rc = ble_hs_init(&app_evq, NULL);
+    rc = ble_hs_init(app_evq, NULL);
     ASSERT(rc == 0);
 }
 
