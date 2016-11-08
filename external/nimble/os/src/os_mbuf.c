@@ -161,18 +161,12 @@ os_msys_register(struct os_mbuf_pool *new_pool)
 {
     struct os_mbuf_pool *pool;
 
-    pool = NULL;
     list_for_each_entry(pool, &g_msys_pool_list, omp_next) {
         if (new_pool->omp_databuf_len > pool->omp_databuf_len) {
             break;
         }
     }
-
-    if (pool) {
-        STAILQ_INSERT_AFTER(&g_msys_pool_list, pool, new_pool, omp_next);
-    } else {
-        STAILQ_INSERT_TAIL(&g_msys_pool_list, new_pool, omp_next);
-    }
+    list_add_tail(&new_pool->omp_next, &pool->omp_next);
 
     return (0);
 }
@@ -183,7 +177,7 @@ os_msys_register(struct os_mbuf_pool *new_pool)
 void
 os_msys_reset(void)
 {
-    STAILQ_INIT(&g_msys_pool_list);
+    INIT_LIST_HEAD(&g_msys_pool_list);
 }
 
 static struct os_mbuf_pool *
@@ -191,15 +185,16 @@ _os_msys_find_pool(uint16_t dsize)
 {
     struct os_mbuf_pool *pool;
 
-    pool = NULL;
-    STAILQ_FOREACH(pool, &g_msys_pool_list, omp_next) {
+    list_for_each_entry(pool, &g_msys_pool_list, omp_next) {
         if (dsize <= pool->omp_databuf_len) {
-            break;
+            return (pool);
         }
     }
 
-    if (!pool) {
-        pool = STAILQ_LAST(&g_msys_pool_list, os_mbuf_pool, omp_next);
+    if (list_empty(&g_msys_pool_list)) {
+        pool = NULL;
+    } else {
+        pool = list_last_entry(&g_msys_pool_list, os_mbuf_pool, omp_next);
     }
 
     return (pool);
