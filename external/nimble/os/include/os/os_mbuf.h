@@ -99,7 +99,7 @@ struct os_mbuf {
     /**
      * Pointer to next entry in the chained memory buffer
      */
-    struct list_head om_next;
+    struct list_head om_node;
 
     /**
      * Pointer to the beginning of the data, after this buffer
@@ -276,6 +276,9 @@ int os_mbuf_free(struct os_mbuf *mb);
 
 /* Free a mbuf chain */
 int os_mbuf_free_chain(struct os_mbuf *om);
+
+/* Free empty mbufs */
+int os_mbuf_free_empty(struct os_mbuf *om);
 
 void os_mbuf_adj(struct os_mbuf *mp, int req_len);
 int os_mbuf_cmpf(const struct os_mbuf *om, int off, const void *data,
