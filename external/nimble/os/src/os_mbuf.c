@@ -688,7 +688,6 @@ os_mbuf_copydata(const struct os_mbuf *m, int off, int len, void *dst)
     uint8_t *udst;
     uint16_t src_off;
     struct os_mbuf *src_om;
-    struct list_head om_hdr;
 
     if (!len) {
         return 0;
@@ -700,18 +699,15 @@ os_mbuf_copydata(const struct os_mbuf *m, int off, int len, void *dst)
     }
 
     udst = dst;
-    list_add_tail(&om_hdr, &m->om_node);
-    list_for_each_entry_from(src_om, &om_hdr, om_node) {
+    while (len > 0 && src_om != NULL) {
         count = min(src_om->om_len - src_off, len);
         memcpy(udst, src_om->om_data + src_off, count);
         len -= count;
-        if (!len) {
-            break;
-        }
         udst += count;
         src_off = 0;
+        src_om = list_first_entry(src_om, struct os_mbuf, om_node);
+        src_om = (src_om == m) ? NULL : src_om;
     }
-    list_del(&om_hdr);
 
     return (len > 0 ? -1 : 0);
 }
@@ -728,55 +724,56 @@ os_mbuf_copydata(const struct os_mbuf *m, int off, int len, void *dst)
 void
 os_mbuf_adj(struct os_mbuf *mp, int req_len)
 {
-    int len = req_len;
-    struct list_head om_hdr;
+    int len;
+    struct os_mbuf *cur;
     int count;
 
-    if (mp == NULL)
+    if (NULL == (cur = mp) || 0 == (len = req_len))
         return;
 
-    list_add_tail(&om_hdr, &mp->om_node);
-    if (len >= 0) {
-        /*
-         * Trim from head.
-         */
-        struct os_mbuf *next;
-        list_for_each_entry(next, &om_hdr, om_node) {
-            if (next->om_len <= len) {
-                len -= next->om_len;
-                next->om_data += next->om_len;
-                next->om_len = 0;
-            } else {
-                next->om_len -= len;
-                next->om_data += len;
-                len = 0;
-                break;
-            }
+    /*
+     * Try to trim from head.
+     */
+    while (len > 0 && cur != NULL) {
+        if (cur->om_len <= len) {
+            len -= cur->om_len;
+            cur->om_data += cur->om_len;
+            cur->om_len = 0;
+            cur = list_first_entry(cur, struct os_mbuf, om_node);
+            cur = (cur == mp) ? NULL : cur;
+        } else {
+            cur->om_len -= len;
+            cur->om_data += len;
+            len = 0;
         }
-        if (OS_MBUF_IS_PKTHDR(mp))
-            OS_MBUF_PKTHDR(mp)->omp_len -= (req_len - len);
-    } else {
-        /*
-         * Trim from tail.
-         */
-        struct os_mbuf *prev;
-        len = -len;
-        list_for_each_entry_reverse(prev, &om_hdr, om_node) {
-            if (prev->om_len <= len) {
-                len -= prev->om_len;
-                prev->om_data += prev->om_len;
-                prev->om_len = 0;
-            } else {
-                prev->om_len -= len;
-                prev->om_data += len;
-                len = 0;
-                break;
-            }
-        }
-        if (OS_MBUF_IS_PKTHDR(mp))
-            OS_MBUF_PKTHDR(mp)->omp_len -= (- req_len - len);
     }
-    list_del(&om_hdr);
+
+    if (len < 0) {
+        len = -len;
+    } else if (OS_MBUF_IS_PKTHDR(mp)) {
+        OS_MBUF_PKTHDR(mp)->omp_len -= (req_len - len);
+    }
+
+    /*
+     * Trim from tail.
+     */
+    while (len > 0 && cur != NULL) {
+        if (cur->om_len <= len) {
+            len -= cur->om_len;
+            cur->om_data += cur->om_len;
+            cur->om_len = 0;
+            cur = list_last_entry(cur, struct os_mbuf, om_node);
+            cur = (cur == mp) ? NULL : cur;
+        } else {
+            cur->om_len -= len;
+            cur->om_data += len;
+            len = 0;
+        }
+    }
+
+    if (OS_MBUF_IS_PKTHDR(mp))
+        OS_MBUF_PKTHDR(mp)->omp_len -= (- req_len - len);
+
     os_mbuf_free_empty(mp);
 }
 
@@ -800,7 +797,6 @@ os_mbuf_cmpf(const struct os_mbuf *om, int off, const void *data, int len)
     uint16_t chunk_sz;
     uint16_t data_off;
     uint16_t om_off;
-    struct list_head om_hdr;
     struct os_mbuf *next;
     int rc;
 
@@ -808,18 +804,13 @@ os_mbuf_cmpf(const struct os_mbuf *om, int off, const void *data, int len)
         return 0;
     }
 
-    if (NULL == om) {
-        return INT_MAX;
-    }
-
     data_off = 0;
     next = os_mbuf_off(om, off, &om_off);
-    if (NULL == next) {
-        return INT_MAX;
-    }
+    while (1) {
+        if (next == NULL) {
+            return INT_MAX;
+        }
 
-    list_add_tail(&om_hdr, &om->om_node);
-    list_for_each_entry_from(next, &om_hdr, om_node) {
         chunk_sz = min(next->om_len - om_off, len - data_off);
         if (chunk_sz > 0) {
             rc = memcmp(next->om_data + om_off, data + data_off, chunk_sz);
@@ -830,13 +821,13 @@ os_mbuf_cmpf(const struct os_mbuf *om, int off, const void *data, int len)
 
         data_off += chunk_sz;
         if (data_off == len) {
-            break;
+            return 0;
         }
+
+        next = list_first_entry(next, struct os_mbuf, om_node);
+        next = (next == om) ? NULL : next;
         om_off = 0;
     }
-    list_del(&om_hdr);
-
-    return (&next->om_node == &om_hdr) ? INT_MAX : 0;
 }
 
 /**
