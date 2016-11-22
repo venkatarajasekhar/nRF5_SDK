@@ -752,6 +752,7 @@ os_mbuf_adj(struct os_mbuf *mp, int req_len)
         len = -len;
     } else if (OS_MBUF_IS_PKTHDR(mp)) {
         OS_MBUF_PKTHDR(mp)->omp_len -= (req_len - len);
+        len = 0;
     }
 
     /*
