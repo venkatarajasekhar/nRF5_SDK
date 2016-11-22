@@ -927,19 +927,23 @@ os_mbuf_cmpm(const struct os_mbuf *om1, uint16_t offset1,
 struct os_mbuf *
 os_mbuf_prepend(struct os_mbuf *om, int len)
 {
-    struct os_mbuf *p;
+    struct os_mbuf *tmp, *hdr;
     int leading;
+
+    if (NULL == (tmp = hdr = om)) {
+        return NULL;
+    }
 
     while (1) {
         /* Fill the available space at the front of the head of the chain, as
          * needed.
          */
-        leading = min(len, OS_MBUF_LEADINGSPACE(om));
+        leading = min(len, OS_MBUF_LEADINGSPACE(hdr));
 
-        om->om_data -= leading;
-        om->om_len += leading;
-        if (OS_MBUF_IS_PKTHDR(om)) {
-            OS_MBUF_PKTHDR(om)->omp_len += leading;
+        hdr->om_data -= leading;
+        hdr->om_len += leading;
+        if (OS_MBUF_IS_PKTHDR(hdr)) {
+            OS_MBUF_PKTHDR(hdr)->omp_len += leading;
         }
 
         len -= leading;
@@ -948,33 +952,33 @@ os_mbuf_prepend(struct os_mbuf *om, int len)
         }
 
         /* The current head didn't have enough space; allocate a new head. */
-        if (OS_MBUF_IS_PKTHDR(om)) {
-            p = os_mbuf_get_pkthdr(om->om_omp,
-                om->om_pkthdr_len - sizeof (struct os_mbuf_pkthdr));
+        if (OS_MBUF_IS_PKTHDR(hdr)) {
+            tmp = os_mbuf_get_pkthdr(hdr->om_omp,
+                hdr->om_pkthdr_len - sizeof (struct os_mbuf_pkthdr));
         } else {
-            p = os_mbuf_get(om->om_omp, 0);
+            tmp = os_mbuf_get(hdr->om_omp, 0);
         }
-        if (p == NULL) {
-            os_mbuf_free_chain(om);
-            om = NULL;
+        if (tmp == NULL) {
+            os_mbuf_free_chain(hdr);
+            hdr = NULL;
             break;
         }
 
-        if (OS_MBUF_IS_PKTHDR(om)) {
-            _os_mbuf_copypkthdr(p, om);
-            om->om_pkthdr_len = 0;
+        if (OS_MBUF_IS_PKTHDR(hdr)) {
+            _os_mbuf_copypkthdr(tmp, hdr);
+            hdr->om_pkthdr_len = 0;
         }
 
         /* Move the new head's data pointer to the end so that data can be
          * prepended.
          */
-        p->om_data += OS_MBUF_TRAILINGSPACE(p);
+        tmp->om_data += OS_MBUF_TRAILINGSPACE(tmp);
 
-        SLIST_NEXT(p, om_next) = om;
-        om = p;
+        list_add_tail(&tmp->om_node, &hdr->om_node);
+        hdr = tmp;
     }
 
-    return om;
+    return hdr;
 }
 
 /**
