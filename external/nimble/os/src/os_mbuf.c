@@ -480,7 +480,7 @@ os_mbuf_append(struct os_mbuf *om, const void *data,  uint16_t len)
     omp = om->om_omp;
 
     /* Get last mbuf in the chain */
-    last = list_last_entry(&om->om_next, os_mbuf, om_next);
+    last = list_last_entry(&om->om_node, struct os_mbuf, om_node);
 
     remainder = len;
     space = OS_MBUF_TRAILINGSPACE(last);
@@ -752,7 +752,7 @@ os_mbuf_adj(struct os_mbuf *mp, int req_len)
         len = -len;
     } else if (OS_MBUF_IS_PKTHDR(mp)) {
         OS_MBUF_PKTHDR(mp)->omp_len -= (req_len - len);
-        len = 0;
+        goto clear;
     }
 
     /*
@@ -775,6 +775,7 @@ os_mbuf_adj(struct os_mbuf *mp, int req_len)
     if (OS_MBUF_IS_PKTHDR(mp))
         OS_MBUF_PKTHDR(mp)->omp_len -= (- req_len - len);
 
+clear:
     os_mbuf_free_empty(mp);
 }
 
@@ -1025,14 +1026,13 @@ os_mbuf_prepend_pullup(struct os_mbuf *om, uint16_t len)
 int
 os_mbuf_copyinto(struct os_mbuf *om, int off, const void *src, int len)
 {
-    struct os_mbuf *next;
-    struct os_mbuf *cur;
+    struct os_mbuf *cur, *next;
     const uint8_t *sptr;
     uint16_t cur_off;
     int copylen;
     int rc;
 
-    /* Find the mbuf,offset pair for the start of the destination. */
+    /* Find the mbuf, offset pair for the start of the destination. */
     cur = os_mbuf_off(om, off, &cur_off);
     if (cur == NULL) {
         return -1;
@@ -1055,8 +1055,8 @@ os_mbuf_copyinto(struct os_mbuf *om, int off, const void *src, int len)
             return 0;
         }
 
-        next = SLIST_NEXT(cur, om_next);
-        if (next == NULL) {
+        next = list_first_entry(cur, struct os_mbuf, om_node);
+        if (next == om) {
             break;
         }
 
@@ -1089,22 +1089,16 @@ os_mbuf_copyinto(struct os_mbuf *om, int off, const void *src, int len)
 void
 os_mbuf_concat(struct os_mbuf *first, struct os_mbuf *second)
 {
-    struct os_mbuf *next;
-    struct os_mbuf *cur;
+    struct os_mbuf *next, *cur, *tmp;
 
-    /* Point 'cur' to the last buffer in the first chain. */
-    cur = first;
-    while (1) {
-        next = SLIST_NEXT(cur, om_next);
-        if (next == NULL) {
-            break;
-        }
-
-        cur = next;
-    }
+    /* Point 'cur' to the last buffer in the second chain. */
+    cur = list_last_entry(&second->om_node, struct os_mbuf, om_node);
 
     /* Attach the second chain to the end of the first. */
-    SLIST_NEXT(cur, om_next) = second;
+    list_for_each_entry_safe(next, tmp, &cur->om_node, om_node) {
+        list_move_tail(&next->om_node, &first->om_node);
+    }
+    list_move_tail(&cur->om_node, &first->om_node);
 
     /* If the first chain has a packet header, calculate the length of the
      * second chain and add it to the header length.
@@ -1113,7 +1107,8 @@ os_mbuf_concat(struct os_mbuf *first, struct os_mbuf *second)
         if (OS_MBUF_IS_PKTHDR(second)) {
             OS_MBUF_PKTHDR(first)->omp_len += OS_MBUF_PKTHDR(second)->omp_len;
         } else {
-            for (cur = second; cur != NULL; cur = SLIST_NEXT(cur, om_next)) {
+            cur = second;
+            list_for_each_entry_from(cur, &first->om_node, om_node) {
                 OS_MBUF_PKTHDR(first)->omp_len += cur->om_len;
             }
         }
@@ -1192,10 +1187,17 @@ struct os_mbuf *
 os_mbuf_pullup(struct os_mbuf *om, uint16_t len)
 {
     struct os_mbuf_pool *omp;
-    struct os_mbuf *next;
-    struct os_mbuf *om2;
+    struct os_mbuf *cur, *hdr, *tmp;
     int count;
-    int space;
+
+    if (NULL == (hdr = cur = om)) {
+        return NULL;
+    }
+
+    if (OS_MBUF_IS_PKTHDR(hdr) &&
+        OS_MBUF_PKTHDR(hdr)->omp_len < len) {
+        goto bad;
+    }
 
     omp = om->om_omp;
 
@@ -1204,50 +1206,47 @@ os_mbuf_pullup(struct os_mbuf *om, uint16_t len)
      * without shifting current data, pullup into it,
      * otherwise allocate a new mbuf to prepend to the chain.
      */
-    if (om->om_len >= len) {
-        return (om);
+    if (hdr->om_len >= len) {
+        return (hdr);
     }
-    if (om->om_len + OS_MBUF_TRAILINGSPACE(om) >= len &&
-        SLIST_NEXT(om, om_next)) {
-        om2 = om;
-        om = SLIST_NEXT(om, om_next);
-        len -= om2->om_len;
+
+    if (hdr->om_len + OS_MBUF_TRAILINGSPACE(hdr) >= len) {
+        len -= hdr->om_len;
+        cur = list_first_entry(hdr, struct os_mbuf, om_node);
     } else {
-        if (len > omp->omp_databuf_len - om->om_pkthdr_len) {
+        if (len > omp->omp_databuf_len - hdr->om_pkthdr_len) {
             goto bad;
         }
 
-        om2 = os_mbuf_get(omp, 0);
-        if (om2 == NULL) {
+        hdr = os_mbuf_get(omp, 0);
+        if (hdr == NULL) {
             goto bad;
         }
 
-        if (OS_MBUF_IS_PKTHDR(om)) {
-            _os_mbuf_copypkthdr(om2, om);
+        if (OS_MBUF_IS_PKTHDR(cur)) {
+            _os_mbuf_copypkthdr(hdr, cur);
+            list_add_tail(&hdr->om_node, &cur->om_node);
         }
     }
-    space = OS_MBUF_TRAILINGSPACE(om2);
-    do {
-        count = min(min(len, space), om->om_len);
-        memcpy(om2->om_data + om2->om_len, om->om_data, count);
+
+    while (len > 0) {
+        count = min(len, cur->om_len);
+        memcpy(hdr->om_data + hdr->om_len, cur->om_data, count);
         len -= count;
-        om2->om_len += count;
-        om->om_len -= count;
-        space -= count;
-        if (om->om_len) {
-            om->om_data += count;
+        hdr->om_len += count;
+        cur->om_len -= count;
+        if (cur->om_len) {
+            cur->om_data += count;
         } else {
-            next = SLIST_NEXT(om, om_next);
-            os_mbuf_free(om);
-            om = next;
+            tmp = list_first_entry(cur, struct os_mbuf, om_node);
+            tmp = (tmp == om) ? NULL : tmp
+            os_mbuf_free(cur);
+            cur = tmp;
         }
-    } while (len > 0 && om);
-    if (len > 0) {
-        os_mbuf_free(om2);
-        goto bad;
     }
-    SLIST_NEXT(om2, om_next) = om;
-    return (om2);
+
+    return (hdr);
+
 bad:
     os_mbuf_free_chain(om);
     return (NULL);
