@@ -413,8 +413,8 @@ err:
  *
  * @return 0 on success, -1 on failure
  */
-int
-os_mbuf_free_empty(struct os_mbuf *om)
+static int
+_os_mbuf_free_empty(struct os_mbuf *om)
 {
     struct os_mbuf *next, *tmp;
     int rc;
@@ -776,7 +776,7 @@ os_mbuf_adj(struct os_mbuf *mp, int req_len)
         OS_MBUF_PKTHDR(mp)->omp_len -= (- req_len - len);
 
 clear:
-    os_mbuf_free_empty(mp);
+    _os_mbuf_free_empty(mp);
 }
 
 /**
