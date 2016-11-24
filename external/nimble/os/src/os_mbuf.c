@@ -454,6 +454,27 @@ _os_mbuf_copypkthdr(struct os_mbuf *new_buf, struct os_mbuf *old_buf)
 }
 
 /**
+ * Get a packet header from one mbuf chain.
+ *
+ * @param om The mbuf chain to find header
+ */
+static struct os_mbuf *
+_os_mbuf_getpkthdr(struct os_mbuf *om)
+{
+    struct os_mbuf *cur = om;
+
+    while (NULL != cur) {
+        if (OS_MBUF_IS_PKTHDR(cur)) {
+            return cur;
+        }
+        cur = list_last_entry(cur, struct os_mbuf, om_node);
+        cur = (cur == om) ? NULL : cur;
+    }
+
+    return NULL;
+}
+
+/**
  * Append data onto a mbuf
  *
  * @param om   The mbuf to append the data onto
@@ -1134,18 +1155,19 @@ void *
 os_mbuf_extend(struct os_mbuf *om, uint16_t len)
 {
     struct os_mbuf *newm;
-    struct os_mbuf *last;
+    struct os_mbuf *last, *header;
     void *data;
 
     if (len > om->om_omp->omp_databuf_len) {
         return NULL;
     }
 
-    /* Scroll to last mbuf in the chain */
-    last = om;
-    while (SLIST_NEXT(last, om_next) != NULL) {
-        last = SLIST_NEXT(last, om_next);
+    header = _os_mbuf_getpkthdr(om);
+    if (NULL == header) {
+        return NULL;
     }
+
+    last = list_last_entry(header, struct os_mbuf, om_node);
 
     if (OS_MBUF_TRAILINGSPACE(last) < len) {
         newm = os_mbuf_get(om->om_omp, 0);
@@ -1153,7 +1175,7 @@ os_mbuf_extend(struct os_mbuf *om, uint16_t len)
             return NULL;
         }
 
-        SLIST_NEXT(last, om_next) = newm;
+        list_add(&newm->om_node, &last->om_node);
         last = newm;
     }
 
