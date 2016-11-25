@@ -1110,32 +1110,35 @@ os_mbuf_copyinto(struct os_mbuf *om, int off, const void *src, int len)
 void
 os_mbuf_concat(struct os_mbuf *first, struct os_mbuf *second)
 {
-    struct os_mbuf *next, *cur, *tmp;
+    struct os_mbuf *first_hdr, *second_hdr, *cur, *next;
 
-    /* Point 'cur' to the last buffer in the second chain. */
-    cur = list_last_entry(&second->om_node, struct os_mbuf, om_node);
+    first_hdr = _os_mbuf_getpkthdr(first);
+    if (NULL == first_hdr) {
+        return;
+    }
 
     /* Attach the second chain to the end of the first. */
-    list_for_each_entry_safe(next, tmp, &cur->om_node, om_node) {
-        list_move_tail(&next->om_node, &first->om_node);
+    second_hdr = _os_mbuf_getpkthdr(second);
+    cur = (NULL == second_hdr) ? second : second_hdr;
+    while (NULL != cur) {
+        next = list_first_entry(cur, struct os_mbuf, om_node);
+        next = (next == cur) ? NULL : next;
+        list_move_tail(&cur->om_node, &first_hdr->om_node);
+        cur = next;
     }
-    list_move_tail(&cur->om_node, &first->om_node);
 
     /* If the first chain has a packet header, calculate the length of the
      * second chain and add it to the header length.
      */
-    if (OS_MBUF_IS_PKTHDR(first)) {
-        if (OS_MBUF_IS_PKTHDR(second)) {
-            OS_MBUF_PKTHDR(first)->omp_len += OS_MBUF_PKTHDR(second)->omp_len;
-        } else {
-            cur = second;
-            list_for_each_entry_from(cur, &first->om_node, om_node) {
-                OS_MBUF_PKTHDR(first)->omp_len += cur->om_len;
-            }
+    if (NULL == second_hdr) {
+        cur = second;
+        list_for_each_entry_from(cur, &first_hdr->om_node, om_node) {
+            OS_MBUF_PKTHDR(first_hdr)->omp_len += cur->om_len;
         }
+    } else {
+        OS_MBUF_PKTHDR(first_hdr)->omp_len += OS_MBUF_PKTHDR(second_hdr)->omp_len;
+        second_hdr->om_pkthdr_len = 0;
     }
-
-    second->om_pkthdr_len = 0;
 }
 
 /**
