@@ -27,7 +27,7 @@ struct os_callout {
     struct os_event c_ev;
     struct os_eventq *c_evq;
     uint32_t c_ticks;
-    TAILQ_ENTRY(os_callout) c_next;
+    struct list_head c_node;
 };
 
 typedef void (*os_callout_func_t)(void *);
