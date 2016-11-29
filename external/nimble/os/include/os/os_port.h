@@ -22,6 +22,8 @@
 
 #include "main.h"
 
+#define OS_TICKS_PER_SEC            configTICK_RATE_HZ
+
 #define STATS_VARIABLE(__name)      __name
 
 #define assert(expr)                ASSERT(expr)

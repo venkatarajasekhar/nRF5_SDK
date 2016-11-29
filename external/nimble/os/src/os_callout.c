@@ -23,7 +23,7 @@
 #include <assert.h>
 #include <string.h>
 
-struct os_callout_list g_callout_list;
+struct list_head g_callout_list = LIST_HEAD_INIT(g_callout_list);
 
 static void
 _os_callout_init(struct os_callout *c, struct os_eventq *evq, void *ev_arg)
@@ -72,8 +72,7 @@ os_callout_stop(struct os_callout *c)
     OS_ENTER_CRITICAL(sr);
 
     if (os_callout_queued(c)) {
-        TAILQ_REMOVE(&g_callout_list, c, c_next);
-        c->c_next.tqe_prev = NULL;
+        list_del(&c->c_node);
     }
 
     if (c->c_evq) {
@@ -113,18 +112,13 @@ os_callout_reset(struct os_callout *c, int32_t ticks)
 
     c->c_ticks = os_time_get() + ticks;
 
-    entry = NULL;
-    TAILQ_FOREACH(entry, &g_callout_list, c_next) {
+    list_for_each_entry(entry, &g_callout_list, c_node) {
         if (OS_TIME_TICK_LT(c->c_ticks, entry->c_ticks)) {
             break;
         }
     }
 
-    if (entry) {
-        TAILQ_INSERT_BEFORE(entry, c, c_next);
-    } else {
-        TAILQ_INSERT_TAIL(&g_callout_list, c, c_next);
-    }
+    list_add_tail(&c->c_node, &entry->c_node);
 
     OS_EXIT_CRITICAL(sr);
 
@@ -150,11 +144,11 @@ os_callout_tick(void)
 
     while (1) {
         OS_ENTER_CRITICAL(sr);
-        c = TAILQ_FIRST(&g_callout_list);
+        c = list_empty(&g_callout_list) ? NULL
+            : list_first_entry(&g_callout_list, struct os_callout, c_node);
         if (c) {
             if (OS_TIME_TICK_GEQ(now, c->c_ticks)) {
-                TAILQ_REMOVE(&g_callout_list, c, c_next);
-                c->c_next.tqe_prev = NULL;
+                list_del(&c->c_node);
             } else {
                 c = NULL;
             }
@@ -182,10 +176,11 @@ os_callout_wakeup_ticks(os_time_t now)
 {
     os_time_t rt;
     struct os_callout *c;
+    os_sr_t sr;
 
-    OS_ASSERT_CRITICAL();
-
-    c = TAILQ_FIRST(&g_callout_list);
+    OS_ENTER_CRITICAL(sr);
+    c = list_empty(&g_callout_list) ? NULL
+        : list_first_entry(&g_callout_list, struct os_callout, c_node);
     if (c != NULL) {
         if (OS_TIME_TICK_GEQ(c->c_ticks, now)) {
             rt = c->c_ticks - now;
@@ -195,6 +190,7 @@ os_callout_wakeup_ticks(os_time_t now)
     } else {
         rt = OS_TIMEOUT_NEVER;
     }
+    OS_EXIT_CRITICAL(sr);
 
     return (rt);
 }

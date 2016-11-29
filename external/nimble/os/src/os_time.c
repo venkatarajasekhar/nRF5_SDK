@@ -27,7 +27,7 @@ CTASSERT(sizeof(os_time_t) == 4);
 
 #define OS_USEC_PER_TICK    (1000000 / OS_TICKS_PER_SEC)
 
-os_time_t g_os_time;
+os_time_t g_os_time = 0;
 
 /*
  * Time-of-day collateral.
@@ -94,18 +94,10 @@ os_time_tick(int ticks)
 void
 os_time_advance(int ticks)
 {
-    assert(ticks >= 0);
+    assert(ticks > 0);
 
-    if (ticks > 0) {
-        if (!os_started()) {
-            g_os_time += ticks;
-        } else {
-            os_time_tick(ticks);
-            os_callout_tick();
-            os_sched_os_timer_exp();
-            os_sched(NULL);
-        }
-    }
+    os_time_tick(ticks);
+    os_callout_tick();
 }
 
 /**
@@ -117,13 +109,8 @@ os_time_advance(int ticks)
 void
 os_time_delay(int32_t osticks)
 {
-    os_sr_t sr;
-
     if (osticks > 0) {
-        OS_ENTER_CRITICAL(sr);
-        os_sched_sleep(os_sched_get_current_task(), (os_time_t)osticks);
-        OS_EXIT_CRITICAL(sr);
-        os_sched(NULL);
+        vTaskDelay(osticks);
     }
 }
 

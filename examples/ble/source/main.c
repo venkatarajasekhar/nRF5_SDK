@@ -374,6 +374,12 @@ void HardFault_process(HardFault_stack_t *p_stack)
     }
 }
 
+/* System tick hook function */
+void vApplicationTickHook(void)
+{
+    os_time_advance(1);
+}
+
 /**
  *@}
  **/

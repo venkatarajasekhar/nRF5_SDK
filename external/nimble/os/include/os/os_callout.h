@@ -51,7 +51,7 @@ os_time_t os_callout_wakeup_ticks(os_time_t now);
 static inline int
 os_callout_queued(struct os_callout *c)
 {
-    return c->c_next.tqe_prev != NULL;
+    return c->c_node.prev != NULL;
 }
 
 #endif /* _OS_CALLOUT_H */
