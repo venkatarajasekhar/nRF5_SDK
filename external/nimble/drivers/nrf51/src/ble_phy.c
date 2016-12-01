@@ -41,15 +41,15 @@ extern uint8_t g_nrf_num_irks;
 extern uint32_t g_nrf_irk_list[];
 
 /* To disable all radio interrupts */
-#define NRF_RADIO_IRQ_MASK_ALL  (RADIO_INTENCLR_READY_Msk    | \
-                                 RADIO_INTENCLR_ADDRESS_Msk  | \
-                                 RADIO_INTENCLR_PAYLOAD_Msk  | \
-                                 RADIO_INTENCLR_END_Msk      | \
-                                 RADIO_INTENCLR_DISABLED_Msk | \
-                                 RADIO_INTENCLR_DEVMATCH_Msk | \
-                                 RADIO_INTENCLR_DEVMISS_Msk  | \
-                                 RADIO_INTENCLR_RSSIEND_Msk  | \
-                                 RADIO_INTENCLR_BCMATCH_Msk)
+#define NRF_RADIO_IRQ_MASK_ALL  ((RADIO_INTENCLR_READY_Clear << RADIO_INTENCLR_READY_Pos)       | \
+                                 (RADIO_INTENCLR_ADDRESS_Clear << RADIO_INTENCLR_ADDRESS_Pos)   | \
+                                 (RADIO_INTENCLR_PAYLOAD_Clear << RADIO_INTENCLR_PAYLOAD_Pos)   | \
+                                 (RADIO_INTENCLR_END_Clear << RADIO_INTENCLR_END_Pos)           | \
+                                 (RADIO_INTENCLR_DISABLED_Clear << RADIO_INTENCLR_DISABLED_Pos) | \
+                                 (RADIO_INTENCLR_DEVMATCH_Clear << RADIO_INTENCLR_DEVMATCH_Pos) | \
+                                 (RADIO_INTENCLR_DEVMISS_Clear << RADIO_INTENCLR_DEVMISS_Pos)   | \
+                                 (RADIO_INTENCLR_RSSIEND_Clear << RADIO_INTENCLR_RSSIEND_Pos)   | \
+                                 (RADIO_INTENCLR_BCMATCH_Clear << RADIO_INTENCLR_BCMATCH_Pos))
 
 /*
  * We configure the nrf with a 1 byte S0 field, 5 bit length field, and
@@ -68,8 +68,8 @@ extern uint32_t g_nrf_irk_list[];
 /* Access address */
 #define NRF_BASE(addr)          ((uint32_t)addr << 8)
 #define NRF_PREFIX(addr,offset) (((uint32_t)addr & 0xFF000000) >> offset)
-#define NRF_AP0_OFFSET          24
-#define NRF_AP1_OFFSET          16
+#define NRF_AP0_OFFSET          (24)
+#define NRF_AP1_OFFSET          (16)
 
 /* Transmit address select */
 #define NRF_TXADDRESS0          (0 & RADIO_TXADDRESS_TXADDRESS_Msk)
@@ -417,7 +417,7 @@ ble_phy_tx_end_isr(void)
 
     /* Clear events and clear interrupt on disabled event */
     NRF_RADIO->EVENTS_DISABLED = 0;
-    NRF_RADIO->INTENCLR = RADIO_INTENCLR_DISABLED_Msk;
+    NRF_RADIO->INTENCLR = RADIO_INTENCLR_DISABLED_Clear << RADIO_INTENCLR_DISABLED_Pos;
     NRF_RADIO->EVENTS_END = 0;
     wfr_time = NRF_RADIO->SHORTS;
 
@@ -698,8 +698,10 @@ ble_phy_init(void)
     nrf_ppi_channel_enable(PPI_CHEN_CH26_Pos);
 
 #if (BLE_LL_CFG_FEAT_LE_ENCRYPTION == 1)
-    NRF_CCM->INTENCLR = 0xffffffff;
-    NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Msk;
+    NRF_CCM->INTENCLR = (CCM_INTENCLR_ENDKSGEN_Clear << CCM_INTENCLR_ENDKSGEN_Pos) |
+                        (CCM_INTENCLR_ENDCRYPT_Clear << CCM_INTENCLR_ENDCRYPT_Pos) |
+                        (CCM_INTENCLR_ERROR_Clear << CCM_INTENCLR_ERROR_Pos);
+    NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Enabled << CCM_SHORTS_ENDKSGEN_CRYPT_Pos;
     NRF_CCM->EVENTS_ERROR = 0;
     memset(g_nrf_encrypt_scratchpad, 0, sizeof(g_nrf_encrypt_scratchpad));
 #endif
@@ -707,7 +709,9 @@ ble_phy_init(void)
 #if (BLE_LL_CFG_FEAT_LL_PRIVACY == 1)
     g_ble_phy_data.phy_aar_scratch = 0;
     NRF_AAR->IRKPTR = (uint32_t)&g_nrf_irk_list[0];
-    NRF_AAR->INTENCLR = 0xffffffff;
+    NRF_AAR->INTENCLR = (AAR_INTENCLR_END_Clear << AAR_INTENCLR_END_Pos)           |
+                        (AAR_INTENCLR_RESOLVED_Clear << AAR_INTENCLR_RESOLVED_Pos) |
+                        (AAR_INTENCLR_NOTRESOLVED_Clear << AAR_INTENCLR_NOTRESOLVED_Pos);
     NRF_AAR->EVENTS_END = 0;
     NRF_AAR->EVENTS_RESOLVED = 0;
     NRF_AAR->EVENTS_NOTRESOLVED = 0;
