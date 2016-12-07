@@ -59,6 +59,9 @@ extern uint32_t g_nrf_irk_list[];
 #define NRF_S0LEN               (1)
 #define NRF_S1LEN               (3)
 
+/* Clear all events */
+#define NRF_EVENTS_Clear        (0UL)
+
 /* Maximum length of frames */
 #define NRF_MAXLEN              (37)
 #define NRF_STATLEN             (0)
@@ -80,7 +83,7 @@ extern uint32_t g_nrf_irk_list[];
 #define NRF_RXADDRESS1          (RADIO_RXADDRESSES_ADDR0_Enabled << RADIO_RXADDRESSES_ADDR0_Pos)
 
 /* Radio channel frequency */
-#define NRF_FREQUENCY(freq)     (((freq) - 2400) & 0x0000007F)
+#define NRF_FREQUENCY(freq)     (((freq) - 2400) & RADIO_FREQUENCY_FREQUENCY_Msk)
 
 /* Maximum tx power */
 #define NRF_TX_PWR_MAX_DBM      (4)
@@ -325,10 +328,11 @@ ble_phy_rx_xcvr_setup(void)
         NRF_CCM->SCRATCHPTR = (uint32_t)&g_nrf_encrypt_scratchpad[0];
         NRF_CCM->MODE = CCM_MODE_MODE_Decryption;
         NRF_CCM->CNFPTR = (uint32_t)&g_nrf_ccm_data;
-        NRF_CCM->SHORTS = 0;
-        NRF_CCM->EVENTS_ERROR = 0;
-        NRF_CCM->EVENTS_ENDCRYPT = 0;
-        NRF_PPI->CHENSET = PPI_CHEN_CH24_Msk | PPI_CHEN_CH25_Msk;
+        NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Disabled << CCM_SHORTS_ENDKSGEN_CRYPT_Pos;
+        NRF_CCM->EVENTS_ERROR = NRF_EVENTS_Clear;
+        NRF_CCM->EVENTS_ENDCRYPT = NRF_EVENTS_Clear;
+        NRF_PPI->CHENSET = (PPI_CHEN_CH24_Enabled << PPI_CHEN_CH24_Pos) |
+                           (PPI_CHEN_CH25_Enabled << PPI_CHEN_CH25_Pos);
     } else {
         NRF_RADIO->PACKETPTR = (uint32_t)dptr;
     }
@@ -340,29 +344,31 @@ ble_phy_rx_xcvr_setup(void)
     if (g_ble_phy_data.phy_privacy) {
         dptr += 3;
         NRF_RADIO->PACKETPTR = (uint32_t)dptr;
-        NRF_RADIO->PCNF0 = (6 << RADIO_PCNF0_LFLEN_Pos) |
-                           (2 << RADIO_PCNF0_S1LEN_Pos) |
-                           (NRF_S0_LEN << RADIO_PCNF0_S0LEN_Pos);
-        NRF_AAR->ENABLE = AAR_ENABLE_ENABLE_Enabled;
+        NRF_RADIO->PCNF0 = (NRF_LFLEN << RADIO_PCNF0_LFLEN_Pos) |
+                           (NRF_S0LEN << RADIO_PCNF0_S0LEN_Pos) |
+                           (NRF_S1LEN << RADIO_PCNF0_S1LEN_Pos);
+        NRF_AAR->ENABLE = AAR_ENABLE_ENABLE_Enabled << AAR_ENABLE_ENABLE_Pos;
         NRF_AAR->IRKPTR = (uint32_t)&g_nrf_irk_list[0];
         NRF_AAR->ADDRPTR = (uint32_t)dptr;
         NRF_AAR->SCRATCHPTR = (uint32_t)&g_ble_phy_data.phy_aar_scratch;
-        NRF_AAR->EVENTS_END = 0;
-        NRF_AAR->EVENTS_RESOLVED = 0;
-        NRF_AAR->EVENTS_NOTRESOLVED = 0;
+        NRF_AAR->EVENTS_END = NRF_EVENTS_Clear;
+        NRF_AAR->EVENTS_RESOLVED = NRF_EVENTS_Clear;
+        NRF_AAR->EVENTS_NOTRESOLVED = NRF_EVENTS_Clear;
     } else {
         if (g_ble_phy_data.phy_encrypted == 0) {
-            NRF_RADIO->PCNF0 = (NRF_LFLEN_BITS << RADIO_PCNF0_LFLEN_Pos) |
-                               (NRF_S0_LEN << RADIO_PCNF0_S0LEN_Pos);
+            NRF_RADIO->PCNF0 = (NRF_LFLEN << RADIO_PCNF0_LFLEN_Pos) |
+                               (NRF_S0LEN << RADIO_PCNF0_S0LEN_Pos) |
+                               (NRF_S1LEN << RADIO_PCNF0_S1LEN_Pos);
             /* XXX: do I only need to do this once? Figure out what I can do
                once. */
-            NRF_AAR->ENABLE = AAR_ENABLE_ENABLE_Disabled;
+            NRF_AAR->ENABLE = AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos;
         }
     }
 #endif
 
     /* Turn off trigger TXEN on output compare match and AAR on bcmatch */
-    NRF_PPI->CHENCLR = PPI_CHEN_CH20_Msk | PPI_CHEN_CH23_Msk;
+    NRF_PPI->CHENCLR = (PPI_CHENCLR_CH20_Clear << PPI_CHENCLR_CH20_Pos) |
+                       (PPI_CHENCLR_CH23_Clear << PPI_CHENCLR_CH23_Pos);
 
     /* Reset the rx started flag. Used for the wait for response */
     g_ble_phy_data.phy_rx_started = 0;
