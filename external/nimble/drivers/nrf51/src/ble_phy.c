@@ -83,6 +83,12 @@ extern uint32_t g_nrf_irk_list[];
 /* Clear all events */
 #define NRF_EVENTS_Clear        (0UL)
 
+/* Trigger task to run */
+#define NRF_TASK_Trigger        (1UL)
+
+/* Set bit counter compare register */
+#define NRF_BCC_BITS(x)         ((x) << 3)
+
 /* Maximum length of frames */
 #define NRF_MAXLEN              (37)
 #define NRF_STATLEN             (0)
@@ -373,14 +379,12 @@ ble_phy_rx_xcvr_setup(void)
         NRF_AAR->EVENTS_RESOLVED = NRF_EVENTS_Clear;
         NRF_AAR->EVENTS_NOTRESOLVED = NRF_EVENTS_Clear;
     } else {
-        if (g_ble_phy_data.phy_encrypted == 0) {
-            NRF_RADIO->PCNF0 = (NRF_LFLEN_Normal << RADIO_PCNF0_LFLEN_Pos) |
-                               (NRF_S0LEN_Normal << RADIO_PCNF0_S0LEN_Pos) |
-                               (NRF_S1LEN_Normal << RADIO_PCNF0_S1LEN_Pos);
-            /* XXX: do I only need to do this once? Figure out what I can do
-               once. */
-            NRF_AAR->ENABLE = AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos;
-        }
+        NRF_RADIO->PCNF0 = (NRF_LFLEN_Normal << RADIO_PCNF0_LFLEN_Pos) |
+                           (NRF_S0LEN_Normal << RADIO_PCNF0_S0LEN_Pos) |
+                           (NRF_S1LEN_Normal << RADIO_PCNF0_S1LEN_Pos);
+        /* XXX: do I only need to do this once? Figure out what I can do
+           once. */
+        NRF_AAR->ENABLE = AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos;
     }
 #endif
 
@@ -388,7 +392,7 @@ ble_phy_rx_xcvr_setup(void)
     nrf_ppi_channels_disable(PPI_CHENCLR_CH20_Msk | PPI_CHENCLR_CH23_Msk);
 
     /* Reset the rx started flag. Used for the wait for response */
-    g_ble_phy_data.phy_rx_started = 0;
+    g_ble_phy_data.phy_rx_started = FALSE;
     g_ble_phy_data.phy_state = BLE_PHY_STATE_RX;
     g_ble_phy_data.rxdptr = dptr;
 
@@ -532,7 +536,7 @@ ble_phy_rx_end_isr(void)
              * know what else to do. If ENDCRYPT is not set and we are
              * encrypted we need to not trust this frame and drop it.
              */
-            if (NRF_CCM->EVENTS_ENDCRYPT == 0) {
+            if (NRF_CCM->EVENTS_ENDCRYPT == NRF_EVENTS_Clear) {
                 STATS_INC(ble_phy_stats, rx_hw_err);
                 ble_hdr->rxinfo.flags &= ~BLE_MBUF_HDR_F_CRC_OK;
             }
@@ -572,7 +576,7 @@ ble_phy_rx_start_isr(void)
     /* Wait to get 1st byte of frame */
     while (1) {
         state = NRF_RADIO->STATE;
-        if (NRF_RADIO->EVENTS_BCMATCH != 0) {
+        if (NRF_RADIO->EVENTS_BCMATCH != NRF_EVENTS_Clear) {
             break;
         }
 
@@ -591,16 +595,15 @@ ble_phy_rx_start_isr(void)
     ble_hdr = &g_ble_phy_data.rxhdr;
     ble_hdr->rxinfo.flags = ble_ll_state_get();
     ble_hdr->rxinfo.channel = g_ble_phy_data.phy_chan;
-    ble_hdr->rxinfo.handle = 0;
-    ble_hdr->beg_cputime = NRF_TIMER0->CC[1] -
-        BLE_TX_LEN_USECS_M(NRF_RX_START_OFFSET);
+    ble_hdr->rxinfo.handle = NULL;
+    ble_hdr->beg_cputime = cputime_get32() - BLE_TX_LEN_USECS_M(NRF_RX_START_OFFSET);
 
     /* Call Link Layer receive start function */
     rc = ble_ll_rx_start(g_ble_phy_data.rxdptr, g_ble_phy_data.phy_chan,
                          &g_ble_phy_data.rxhdr);
     if (rc >= 0) {
         /* Set rx started flag and enable rx end ISR */
-        g_ble_phy_data.phy_rx_started = 1;
+        g_ble_phy_data.phy_rx_started = TRUE;
         NRF_RADIO->INTENSET = RADIO_INTENSET_END_Set << RADIO_INTENSET_END_Pos;
 
 #if (BLE_LL_CFG_FEAT_LL_PRIVACY == 1)
