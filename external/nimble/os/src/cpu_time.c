@@ -461,3 +461,16 @@ cputime_get32(void)
     return nrf_drv_timer_capture(&cputimer_id, CPUTIMER_GET_CHANNEL);
 }
 
+/**
+ * cputime phy set
+ *
+ * Set the BLE physical layer timer.
+ *
+ * @param cputime time to be set.
+ */
+void
+cputime_phy_set(uint32_t cputime)
+{
+    nrf_drv_timer_compare(&cputimer_id, CPUTIMER_PHY_CHANNEL, cputime, false);
+}
+

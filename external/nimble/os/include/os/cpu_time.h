@@ -42,6 +42,8 @@ extern "C" {
 #define HAL_CPUTIME_1MHZ
 #endif
 
+#define CPUTIMER_PHY_CHANNEL        NRF_TIMER_CC_CHANNEL0
+
 #define CPUTIMER_SET_CHANNEL        NRF_TIMER_CC_CHANNEL3
 #define CPUTIMER_SET_EVENT          NRF_TIMER_EVENT_COMPARE3
 
@@ -230,6 +232,15 @@ void cputime_timer_stop(struct cpu_timer *timer);
  * to be called by the user.
  */
 void cputime_chk_expiration(void);
+
+/**
+ * cputime phy set
+ *
+ * Set the BLE physical layer timer.
+ *
+ * @param cputime time to be set.
+ */
+void cputime_phy_set(uint32_t cputime);
 
 /*--- HW specific API. These are not intended to be called by user  ---*/
 void cputime_disable_ocmp(void);
