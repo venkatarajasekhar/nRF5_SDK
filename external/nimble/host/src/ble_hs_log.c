@@ -20,8 +20,6 @@
 #include "os/os.h"
 #include "host/ble_hs.h"
 
-struct log ble_hs_log;
-
 void
 ble_hs_log_mbuf(const struct os_mbuf *om)
 {

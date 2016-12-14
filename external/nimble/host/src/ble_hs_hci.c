@@ -230,7 +230,8 @@ ble_hs_hci_wait_for_ack(void)
 #else
     rc = os_sem_pend(&ble_hs_hci_sem, BLE_HCI_CMD_TIMEOUT);
     switch (rc) {
-    case 0:
+    case OS_OK:
+        rc = 0;
         BLE_HS_DBG_ASSERT(ble_hs_hci_ack != NULL);
         break;
     case OS_TIMEOUT:

@@ -1179,7 +1179,7 @@ ble_ll_init(uint8_t ll_task_prio, uint8_t num_acl_pkts, uint16_t acl_pkt_size)
     cputime_timer_init(&g_ble_ll_data.ll_wfr_timer, ble_ll_wfr_timer_exp,
                        NULL);
 
-    ble_ll_hci_os_event_buf = pvPortMalloc(
+    ble_ll_hci_os_event_buf = os_malloc(
         OS_MEMPOOL_BYTES(16, sizeof (struct os_event)));
     assert(ble_ll_hci_os_event_buf != NULL);
 

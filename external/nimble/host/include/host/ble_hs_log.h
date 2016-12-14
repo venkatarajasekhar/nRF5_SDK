@@ -21,12 +21,10 @@
 #define H_BLE_HS_LOG_
 
 #include "log/log.h"
-struct os_mbuf;
 
-extern struct log ble_hs_log;
+#define BLE_HS_LOG(lvl, ...)          NRF_LOG_ ## lvl(##__VA_ARGS__)
 
-#define BLE_HS_LOG(lvl, ...) \
-    LOG_ ## lvl(&ble_hs_log, LOG_MODULE_NIMBLE_HOST, __VA_ARGS__)
+#define NRF_LOG_INFO(...)             NRF_LOG(##__VA_ARGS__)
 
 #define BLE_HS_LOG_ADDR(lvl, addr)                      \
     BLE_HS_LOG(lvl, "%02x:%02x:%02x:%02x:%02x:%02x",    \

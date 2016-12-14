@@ -28,6 +28,9 @@
 
 #define assert(expr)                ASSERT(expr)
 
+#define os_malloc(size)             pvPortMalloc(size)
+#define os_free(pv)                 vPortFree(pv)
+
 #define OS_ENTER_CRITICAL(sr)       (void)sr;    \
                                     taskENTER_CRITICAL()
 #define OS_EXIT_CRITICAL(sr)        (void)sr;    \
