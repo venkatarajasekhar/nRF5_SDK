@@ -100,7 +100,7 @@ stats_module_init(void)
     if (stats_module_inited) {
         return 0;
     }
-    stats_module_inited = 1;
+    stats_module_inited = TRUE;
 
 #ifdef SHELL_PRESENT
     rc = stats_shell_register();

@@ -182,6 +182,7 @@ struct stats_name_map STATS_NAME_MAP_NAME(ble_ll_stats)[] = {
 /* The BLE LL task data structure */
 #define BLE_LL_STACK_SIZE   (80)
 struct os_task g_ble_ll_task;
+os_stack_t g_ble_ll_stack[BLE_LL_STACK_SIZE];
 
 struct os_mempool g_ble_ll_hci_ev_pool;
 static void *ble_ll_hci_os_event_buf;
@@ -1235,11 +1236,8 @@ ble_ll_init(uint8_t ll_task_prio, uint8_t num_acl_pkts, uint16_t acl_pkt_size)
     lldata->ll_supp_features = features;
 
     /* Initialize the LL task */
-    if(pdPASS != xTaskCreate(ble_ll_task, "ble_ll", BLE_LL_STACK_SIZE,
-                             NULL, ll_task_prio, &g_ble_ll_task.handle))
-    {
-        APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
-    }
+    os_task_init(&g_ble_ll_task, "ble_ll", ble_ll_task, NULL, ll_task_prio,
+                 OS_WAIT_FOREVER, g_ble_ll_stack, BLE_LL_STACK_SIZE);
 
     rc = stats_init_and_reg(STATS_HDR(ble_ll_stats),
                             STATS_SIZE_INIT_PARMS(ble_ll_stats, STATS_SIZE_32),

@@ -24,6 +24,8 @@
 
 #define OS_TICKS_PER_SEC            configTICK_RATE_HZ
 
+#define OS_WAIT_FOREVER             (-1)
+
 #define STATS_VARIABLE(__name)      __name
 
 #define assert(expr)                ASSERT(expr)
@@ -63,9 +65,30 @@ enum os_error {
 
 typedef enum os_error os_error_t;
 typedef uint8_t os_sr_t;
+typedef uint32_t os_stack_t;
+typedef TaskFunction_t os_task_func_t;
 
 struct os_task {
     TaskHandle_t handle;
-}
+};
+
+struct os_sem {
+    SemaphoreHandle_t handle;
+};
+
+struct os_mutex {
+    SemaphoreHandle_t handle;
+};
+
+os_error_t os_task_init(struct os_task *task, char *name, os_task_func_t func, void *arg,
+        uint8_t prio, os_time_t sanity_itvl, os_stack_t *stack_bottom, uint16_t stack_size);
+
+os_error_t os_sem_init(struct os_sem *sem, uint16_t tokens);
+os_error_t os_sem_release(struct os_sem *sem);
+os_error_t os_sem_pend(struct os_sem *sem, uint32_t timeout);
+
+os_error_t os_mutex_init(struct os_mutex *mu);
+os_error_t os_mutex_release(struct os_mutex *mu);
+os_error_t os_mutex_pend(struct os_mutex *mu, uint32_t timeout);
 
 #endif
