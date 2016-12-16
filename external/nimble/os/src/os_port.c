@@ -82,6 +82,10 @@ os_task_init(struct os_task *task, char *name, os_task_func_t func, void *arg,
 os_error_t
 os_sem_init(struct os_sem *sem, uint16_t tokens)
 {
+    if(NULL == sem) {
+        return OS_INVALID_PARM;
+    }
+
     sem->handle = xSemaphoreCreateCounting(OS_SEM_MAX_SIZE, tokens);
     return (NULL == sem->handle) ? OS_ENOMEM : OS_OK;
 }
@@ -179,7 +183,12 @@ os_sem_pend(struct os_sem *sem, uint32_t timeout)
 os_error_t
 os_mutex_init(struct os_mutex *mu)
 {
+    if(NULL == mu) {
+        return OS_INVALID_PARM;
+    }
 
+    mu->handle = xSemaphoreCreateMutex();
+    return (NULL == mu->handle) ? OS_ENOMEM : OS_OK;
 }
 
 /**
@@ -197,7 +206,27 @@ os_mutex_init(struct os_mutex *mu)
 os_error_t
 os_mutex_release(struct os_mutex *mu)
 {
+    BaseType_t status;
+    os_error_t ret;
 
+    if (NULL == mu->handle) {
+        return OS_INVALID_PARM;
+    }
+
+    status = xSemaphoreGive(mu->handle);
+    switch(status) {
+        case pdPASS:
+            ret = OS_OK;
+            break;
+        case errQUEUE_FULL:
+            ret = OS_EINVAL;
+            break;
+        default:
+            ret = OS_ENOENT;
+            break;
+    }
+
+    return ret;
 }
 
 /**
@@ -219,6 +248,26 @@ os_mutex_release(struct os_mutex *mu)
 os_error_t
 os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
 {
+    BaseType_t status;
+    os_error_t ret;
 
+    if (NULL == mu->handle) {
+        return OS_INVALID_PARM;
+    }
+
+    status = xSemaphoreTake(mu->handle, timeout);
+    switch(status) {
+        case pdPASS:
+            ret = OS_OK;
+            break;
+        case errQUEUE_EMPTY:
+            ret = OS_TIMEOUT;
+            break;
+        default:
+            ret = OS_ENOENT;
+            break;
+    }
+
+    return ret;
 }
 
