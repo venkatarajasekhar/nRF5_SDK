@@ -39,8 +39,11 @@ const nrf_drv_timer_t   cputimer_id = NRF_DRV_TIMER_INSTANCE(0);
 
 /* The CPU time task data structure */
 #define CPU_TIME_STACK_SIZE   (80)
-struct TaskHandle_t g_cpu_time_task;
-SemaphoreHandle_t g_cpu_time_sem = NULL;
+struct os_task g_cpu_time_task;
+os_stack_t g_cpu_time_stack[CPU_TIME_STACK_SIZE];
+
+/* Semaphore for timers */
+struct os_sem g_cpu_time_sem;
 
 /**
  * cputime chk expiration
@@ -88,7 +91,7 @@ cputime_handle_task(void *arg)
 {
     while(true) {
         /* wait for timeout */
-        if(pdTRUE == xSemaphoreTake(g_cpu_time_sem, portMAX_DELAY)) {
+        if(OS_OK == os_sem_pend(&g_cpu_time_sem, OS_WAIT_FOREVER)) {
             cputime_chk_expiration();
         }
     }
@@ -109,16 +112,11 @@ int
 cputime_init(uint8_t cputime_task_prio)
 {
     /* Initialize the CPU time semaphore */
-    g_cpu_time_sem = xSemaphoreCreateBinary();
-    if(NULL == g_cpu_time_sem) {
-        APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
-    }
+    os_sem_init(&g_cpu_time_sem, 0);
 
     /* Initialize the CPU time task */
-    if(pdPASS != xTaskCreate(cputime_handle_task, "cpu_time", CPU_TIME_STACK_SIZE,
-                             NULL, cputime_task_prio, &g_cpu_time_task)) {
-        APP_ERROR_HANDLER(NRF_ERROR_NO_MEM);
-    }
+    os_task_init(&g_cpu_time_task, "cpu_time", cputime_handle_task, NULL, cputime_task_prio,
+                 OS_WAIT_FOREVER, g_cpu_time_stack, CPU_TIME_STACK_SIZE);
 
     INIT_LIST_HEAD(&cputimer_q);
 
@@ -380,19 +378,14 @@ cputime_timer_stop(struct cpu_timer *timer)
 static void
 cputime_event_handler(nrf_timer_event_t event_type, void * p_context)
 {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
     switch(event_type) {
         case CPUTIMER_SET_EVENT:
-            xHigherPriorityTaskWoken = pdFALSE;
-            xSemaphoreGiveFromISR(g_cpu_time_sem, &xHigherPriorityTaskWoken);
+            os_sem_release(&g_cpu_time_sem);
             break;
         case CPUTIMER_GET_EVENT:
         default:
             return;
     }
-
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 /**
@@ -444,7 +437,7 @@ cputime_set_ocmp(struct cpu_timer *timer)
 
     /* Force interrupt to occur as we may have missed it */
     if ((int32_t)(cputime_get32() - timer->cputime) >= 0) {
-        xSemaphoreGive(g_cpu_time_sem);
+        os_sem_release(&g_cpu_time_sem);
     }
 }
 

@@ -19,7 +19,7 @@
 
 #include "os/os_port.h"
 
-#define OS_SEM_MAX_SIZE                       10
+#define OS_SEM_MAX_COUNT                       10
 
 /**
  * Initialize a task.
@@ -50,8 +50,8 @@ os_task_init(struct os_task *task, char *name, os_task_func_t func, void *arg,
     BaseType_t status;
     os_error_t ret;
 
-    status = xTaskGenericCreate(func, name, stack_size, arg, prio, &task->handle,
-                                stack_bottom, NULL);
+    status = xTaskGenericCreate(func, name, stack_size * sizeof(os_stack_t), arg,
+                                prio, &task->handle, stack_bottom, NULL);
     switch(status) {
         case pdPASS:
             ret = OS_OK;
@@ -61,6 +61,64 @@ os_task_init(struct os_task *task, char *name, os_task_func_t func, void *arg,
             break;
         default:
             ret = OS_EINVAL;
+            break;
+    }
+
+    return ret;
+}
+
+static os_error_t
+_os_semaphore_give(SemaphoreHandle_t handle)
+{
+    BaseType_t status;
+    os_error_t ret;
+
+    if(__get_IPSR() != 0) {
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        status = xSemaphoreGiveFromISR(handle, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    } else {
+        status = xSemaphoreGive(handle);
+    }
+
+    switch(status) {
+        case pdPASS:
+            ret = OS_OK;
+            break;
+        case errQUEUE_FULL:
+            ret = OS_EINVAL;
+            break;
+        default:
+            ret = OS_ENOENT;
+            break;
+    }
+
+    return ret;
+}
+
+static os_error_t
+_os_semaphore_take(SemaphoreHandle_t handle, uint32_t timeout)
+{
+    BaseType_t status;
+    os_error_t ret;
+
+    if(__get_IPSR() != 0) {
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        status = xSemaphoreTakeFromISR(handle, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    } else {
+        status = xSemaphoreTake(handle, timeout);
+    }
+
+    switch(status) {
+        case pdPASS:
+            ret = OS_OK;
+            break;
+        case errQUEUE_EMPTY:
+            ret = OS_TIMEOUT;
+            break;
+        default:
+            ret = OS_ENOENT;
             break;
     }
 
@@ -86,7 +144,7 @@ os_sem_init(struct os_sem *sem, uint16_t tokens)
         return OS_INVALID_PARM;
     }
 
-    sem->handle = xSemaphoreCreateCounting(OS_SEM_MAX_SIZE, tokens);
+    sem->handle = xSemaphoreCreateCounting(OS_SEM_MAX_COUNT, tokens);
     return (NULL == sem->handle) ? OS_ENOMEM : OS_OK;
 }
 
@@ -104,27 +162,11 @@ os_sem_init(struct os_sem *sem, uint16_t tokens)
 os_error_t
 os_sem_release(struct os_sem *sem)
 {
-    BaseType_t status;
-    os_error_t ret;
-
-    if (NULL == sem->handle) {
+    if (NULL == sem || NULL == sem->handle) {
         return OS_INVALID_PARM;
     }
 
-    status = xSemaphoreGive(sem->handle);
-    switch(status) {
-        case pdPASS:
-            ret = OS_OK;
-            break;
-        case errQUEUE_FULL:
-            ret = OS_EINVAL;
-            break;
-        default:
-            ret = OS_ENOENT;
-            break;
-    }
-
-    return ret;
+    return _os_semaphore_give(sem->handle);
 }
 
 /**
@@ -146,27 +188,11 @@ os_sem_release(struct os_sem *sem)
 os_error_t
 os_sem_pend(struct os_sem *sem, uint32_t timeout)
 {
-    BaseType_t status;
-    os_error_t ret;
-
-    if (NULL == sem->handle) {
+    if (NULL == sem || NULL == sem->handle) {
         return OS_INVALID_PARM;
     }
 
-    status = xSemaphoreTake(sem->handle, timeout);
-    switch(status) {
-        case pdPASS:
-            ret = OS_OK;
-            break;
-        case errQUEUE_EMPTY:
-            ret = OS_TIMEOUT;
-            break;
-        default:
-            ret = OS_ENOENT;
-            break;
-    }
-
-    return ret;
+    return _os_semaphore_take(sem->handle, timeout);
 }
 
 /**
@@ -206,27 +232,11 @@ os_mutex_init(struct os_mutex *mu)
 os_error_t
 os_mutex_release(struct os_mutex *mu)
 {
-    BaseType_t status;
-    os_error_t ret;
-
     if (NULL == mu->handle) {
         return OS_INVALID_PARM;
     }
 
-    status = xSemaphoreGive(mu->handle);
-    switch(status) {
-        case pdPASS:
-            ret = OS_OK;
-            break;
-        case errQUEUE_FULL:
-            ret = OS_EINVAL;
-            break;
-        default:
-            ret = OS_ENOENT;
-            break;
-    }
-
-    return ret;
+    return _os_semaphore_give(mu->handle);
 }
 
 /**
@@ -248,26 +258,10 @@ os_mutex_release(struct os_mutex *mu)
 os_error_t
 os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
 {
-    BaseType_t status;
-    os_error_t ret;
-
     if (NULL == mu->handle) {
         return OS_INVALID_PARM;
     }
 
-    status = xSemaphoreTake(mu->handle, timeout);
-    switch(status) {
-        case pdPASS:
-            ret = OS_OK;
-            break;
-        case errQUEUE_EMPTY:
-            ret = OS_TIMEOUT;
-            break;
-        default:
-            ret = OS_ENOENT;
-            break;
-    }
-
-    return ret;
+    return _os_semaphore_take(mu->handle, timeout);
 }
 

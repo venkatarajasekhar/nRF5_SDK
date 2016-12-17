@@ -37,7 +37,7 @@ struct os_event {
 #define OS_EVENT_T_PERUSER     (16)
 
 struct os_eventq {
-    SemaphoreHandle_t evq_sem;
+    struct os_sem evq_sem;
     struct list_head evq_hdr;
 };
 
