@@ -57,18 +57,22 @@ void
 cputime_chk_expiration(void)
 {
     os_sr_t sr;
-    struct cpu_timer *timer, *timer_tmp;
+    struct cpu_timer *timer;
 
-    OS_ENTER_CRITICAL(sr);
-    list_for_each_entry_safe(timer, timer_tmp, &cputimer_q, link) {
-        if ((int32_t)(cputime_get32() - timer->cputime) >= 0) {
-            list_del(&timer->link);
-            timer->cb(timer->arg);
-        } else {
+    while (!list_empty(&cputimer_q)) {
+        timer = list_first_entry(&cputimer_q, cpu_timer, link);
+        if ((int32_t)(cputime_get32() - timer->cputime) < 0) {
             break;
         }
+
+        OS_ENTER_CRITICAL(sr);
+        list_del(&timer->link);
+        OS_EXIT_CRITICAL(sr);
+
+        timer->cb(timer->arg);
     }
 
+    OS_ENTER_CRITICAL(sr);
     /* Any timers left on queue? If so, we need to set OCMP */
     if (list_empty(&cputimer_q)) {
         cputime_disable_ocmp();
