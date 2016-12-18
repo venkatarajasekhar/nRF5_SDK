@@ -26,7 +26,7 @@
 /** At least three channels required per connection (sig, att, sm). */
 #define BLE_HS_CONN_MIN_CHANS       3
 
-static SLIST_HEAD(, ble_hs_conn) ble_hs_conns;
+static struct list_head ble_hs_conns;
 static struct os_mempool ble_hs_conn_pool;
 
 static os_membuf_t *ble_hs_conn_elem_mem;
@@ -209,7 +209,7 @@ ble_hs_conn_insert(struct ble_hs_conn *conn)
     BLE_HS_DBG_ASSERT(ble_hs_locked_by_cur_task());
 
     BLE_HS_DBG_ASSERT_EVAL(ble_hs_conn_find(conn->bhc_handle) == NULL);
-    SLIST_INSERT_HEAD(&ble_hs_conns, conn, bhc_next);
+    list_add(&conn->bhc_node, &ble_hs_conns);
 }
 
 void
@@ -221,7 +221,7 @@ ble_hs_conn_remove(struct ble_hs_conn *conn)
 
     BLE_HS_DBG_ASSERT(ble_hs_locked_by_cur_task());
 
-    SLIST_REMOVE(&ble_hs_conns, conn, ble_hs_conn, bhc_next);
+    list_del(&conn->bhc_node);
 }
 
 struct ble_hs_conn *
@@ -235,7 +235,7 @@ ble_hs_conn_find(uint16_t conn_handle)
 
     BLE_HS_DBG_ASSERT(ble_hs_locked_by_cur_task());
 
-    SLIST_FOREACH(conn, &ble_hs_conns, bhc_next) {
+    list_for_each_entry(conn, &ble_hs_conns, bhc_node) {
         if (conn->bhc_handle == conn_handle) {
             return conn;
         }
@@ -266,7 +266,7 @@ ble_hs_conn_find_by_addr(uint8_t addr_type, uint8_t *addr)
 
     BLE_HS_DBG_ASSERT(ble_hs_locked_by_cur_task());
 
-    SLIST_FOREACH(conn, &ble_hs_conns, bhc_next) {
+    list_for_each_entry(conn, &ble_hs_conns, bhc_node) {
         if (conn->bhc_peer_addr_type == addr_type &&
             memcmp(conn->bhc_peer_addr, addr, 6) == 0) {
 
@@ -285,17 +285,14 @@ ble_hs_conn_find_by_idx(int idx)
 #endif
 
     struct ble_hs_conn *conn;
-    int i;
+    int num = 0;
 
     BLE_HS_DBG_ASSERT(ble_hs_locked_by_cur_task());
 
-    i = 0;
-    SLIST_FOREACH(conn, &ble_hs_conns, bhc_next) {
-        if (i == idx) {
+    list_for_each_entry(conn, &ble_hs_conns, bhc_node) {
+        if (num++ == idx) {
             return conn;
         }
-
-        i++;
     }
 
     return NULL;
@@ -321,7 +318,7 @@ ble_hs_conn_first(void)
 #endif
 
     BLE_HS_DBG_ASSERT(ble_hs_locked_by_cur_task());
-    return SLIST_FIRST(&ble_hs_conns);
+    return list_first_entry(&ble_hs_conns, ble_hs_conn, bhc_node);
 }
 
 void
@@ -388,7 +385,7 @@ ble_hs_conn_init(void)
 
     ble_hs_conn_free_mem();
 
-    ble_hs_conn_elem_mem = malloc(
+    ble_hs_conn_elem_mem = os_malloc(
         OS_MEMPOOL_BYTES(ble_hs_cfg.max_connections,
                          sizeof (struct ble_hs_conn)));
     if (ble_hs_conn_elem_mem == NULL) {
@@ -403,7 +400,7 @@ ble_hs_conn_init(void)
         goto err;
     }
 
-    SLIST_INIT(&ble_hs_conns);
+    INIT_LIST_HEAD(&ble_hs_conns);
 
     return 0;
 

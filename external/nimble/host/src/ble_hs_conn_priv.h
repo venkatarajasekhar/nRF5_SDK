@@ -33,7 +33,7 @@ typedef uint8_t ble_hs_conn_flags_t;
 #define BLE_HS_CONN_F_MASTER        0x01
 
 struct ble_hs_conn {
-    SLIST_ENTRY(ble_hs_conn) bhc_next;
+    struct list_head bhc_node;
     uint16_t bhc_handle;
     uint8_t bhc_peer_addr_type;
     uint8_t bhc_our_addr_type;
