@@ -374,8 +374,10 @@ ble_hs_conn_addrs(const struct ble_hs_conn *conn,
 static void
 ble_hs_conn_free_mem(void)
 {
-    free(ble_hs_conn_elem_mem);
-    ble_hs_conn_elem_mem = NULL;
+    if (ble_hs_conn_elem_mem) {
+        os_free(ble_hs_conn_elem_mem);
+        ble_hs_conn_elem_mem = NULL;
+    }
 }
 
 int 
@@ -395,14 +397,14 @@ ble_hs_conn_init(void)
     rc = os_mempool_init(&ble_hs_conn_pool, ble_hs_cfg.max_connections,
                          sizeof (struct ble_hs_conn),
                          ble_hs_conn_elem_mem, "ble_hs_conn_pool");
-    if (rc != 0) {
+    if (rc != OS_OK) {
         rc = BLE_HS_EOS;
         goto err;
     }
 
     INIT_LIST_HEAD(&ble_hs_conns);
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     ble_hs_conn_free_mem();

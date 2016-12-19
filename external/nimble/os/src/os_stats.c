@@ -40,7 +40,7 @@ struct list_head stats_registry = LIST_HEAD_INIT(stats_registry);
 
 static uint8_t stats_module_inited;
 
-int
+os_error_t
 stats_walk(struct stats_hdr *hdr, stats_walk_func_t walk_func, void *arg)
 {
     char *name;
@@ -79,39 +79,39 @@ stats_walk(struct stats_hdr *hdr, stats_walk_func_t walk_func, void *arg)
         }
 
         rc = walk_func(hdr, arg, name, cur);
-        if (rc != 0) {
+        if (rc != OS_OK) {
             goto err;
         }
 
         cur += hdr->s_size;
     }
 
-    return (0);
+    return (OS_OK);
 err:
     return (rc);
 }
 
 
-int
+os_error_t
 stats_module_init(void)
 {
     int rc;
 
     if (stats_module_inited) {
-        return 0;
+        return OS_OK;
     }
     stats_module_inited = TRUE;
 
 #ifdef SHELL_PRESENT
     rc = stats_shell_register();
-    if (rc != 0) {
+    if (rc != OS_OK) {
         goto err;
     }
 #endif
 
 #ifdef NEWTMGR_PRESENT
     rc = stats_nmgr_register_group();
-    if (rc != 0) {
+    if (rc != OS_OK) {
         goto err;
     }
 #endif
@@ -119,16 +119,16 @@ stats_module_init(void)
     rc = stats_init(STATS_HDR(os_stats),
                     STATS_SIZE_INIT_PARMS(os_stats, STATS_SIZE_32),
                     STATS_NAME_INIT_PARMS(os_stats));
-    if (rc != 0) {
+    if (rc != OS_OK) {
         goto err;
     }
 
     rc = stats_register("os_stats", STATS_HDR(os_stats));
-    if (rc != 0) {
+    if (rc != OS_OK) {
         goto err;
     }
 
-    return (0);
+    return (OS_OK);
 err:
     return (rc);
 }
@@ -145,7 +145,7 @@ stats_module_reset(void)
     INIT_LIST_HEAD(&stats_registry);
 }
 
-int
+os_error_t
 stats_init(struct stats_hdr *shdr, uint8_t size, uint8_t cnt,
         struct stats_name_map *map, uint8_t map_cnt)
 {
@@ -158,10 +158,10 @@ stats_init(struct stats_hdr *shdr, uint8_t size, uint8_t cnt,
     shdr->s_map_cnt = map_cnt;
 #endif
 
-    return (0);
+    return (OS_OK);
 }
 
-int
+os_error_t
 stats_group_walk(stats_group_walk_func_t walk_func, void *arg)
 {
     struct stats_hdr *hdr;
@@ -169,11 +169,11 @@ stats_group_walk(stats_group_walk_func_t walk_func, void *arg)
 
     list_for_each_entry(hdr, &stats_registry, s_node) {
         rc = walk_func(hdr, arg);
-        if (rc != 0) {
+        if (rc != OS_OK) {
             goto err;
         }
     }
-    return (0);
+    return (OS_OK);
 err:
     return (rc);
 }
@@ -183,17 +183,16 @@ stats_group_find(char *name)
 {
     struct stats_hdr *cur;
 
-    cur = NULL;
     list_for_each_entry(cur, &stats_registry, s_node) {
         if (!strcmp(cur->s_name, name)) {
             break;
         }
     }
 
-    return (cur);
+    return (&cur->s_node == &stats_registry) ? NULL : cur;
 }
 
-int
+os_error_t
 stats_register(char *name, struct stats_hdr *shdr)
 {
     struct stats_hdr *cur;
@@ -204,7 +203,7 @@ stats_register(char *name, struct stats_hdr *shdr)
      */
     list_for_each_entry(cur, &stats_registry, s_node) {
         if (!strcmp(cur->s_name, name)) {
-            rc = -1;
+            rc = OS_EINVAL;
             goto err;
         }
     }
@@ -215,7 +214,7 @@ stats_register(char *name, struct stats_hdr *shdr)
 
     STATS_INC(os_stats, num_registered);
 
-    return (0);
+    return (OS_OK);
 err:
     return (rc);
 }
@@ -223,19 +222,19 @@ err:
 /**
  * Initializes and registers the specified statistics section.
  */
-int
+os_error_t
 stats_init_and_reg(struct stats_hdr *shdr, uint8_t size, uint8_t cnt,
                    struct stats_name_map *map, uint8_t map_cnt, char *name)
 {
     int rc;
 
     rc = stats_init(shdr, size, cnt, map, map_cnt);
-    if (rc != 0) {
+    if (rc != OS_OK) {
         return rc;
     }
 
     rc = stats_register(name, shdr);
-    if (rc != 0) {
+    if (rc != OS_OK) {
         return rc;
     }
 

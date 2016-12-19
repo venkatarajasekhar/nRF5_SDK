@@ -41,6 +41,7 @@ struct os_event;
 
 #define BLE_HS_CONN_HANDLE_NONE     0xffff
 
+#define BLE_HS_ENONE                0
 #define BLE_HS_EAGAIN               1
 #define BLE_HS_EALREADY             2
 #define BLE_HS_EINVAL               3
