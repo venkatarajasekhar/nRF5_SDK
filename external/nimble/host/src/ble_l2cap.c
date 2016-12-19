@@ -295,8 +295,10 @@ ble_l2cap_tx(struct ble_hs_conn *conn, struct ble_l2cap_chan *chan,
 static void
 ble_l2cap_free_mem(void)
 {
-    free(ble_l2cap_chan_mem);
-    ble_l2cap_chan_mem = NULL;
+    if (ble_l2cap_chan_mem) {
+        os_free(ble_l2cap_chan_mem);
+        ble_l2cap_chan_mem = NULL;
+    }
 }
 
 int
@@ -306,7 +308,7 @@ ble_l2cap_init(void)
 
     ble_l2cap_free_mem();
 
-    ble_l2cap_chan_mem = malloc(
+    ble_l2cap_chan_mem = os_malloc(
         OS_MEMPOOL_BYTES(ble_hs_cfg.max_l2cap_chans,
                          sizeof (struct ble_l2cap_chan)));
     if (ble_l2cap_chan_mem == NULL) {
@@ -317,13 +319,13 @@ ble_l2cap_init(void)
     rc = os_mempool_init(&ble_l2cap_chan_pool, ble_hs_cfg.max_l2cap_chans,
                          sizeof (struct ble_l2cap_chan),
                          ble_l2cap_chan_mem, "ble_l2cap_chan_pool");
-    if (rc != 0) {
+    if (rc != OS_OK) {
         rc = BLE_HS_EOS;
         goto err;
     }
 
     rc = ble_l2cap_sig_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
@@ -335,12 +337,12 @@ ble_l2cap_init(void)
     rc = stats_init_and_reg(
         STATS_HDR(ble_l2cap_stats), STATS_SIZE_INIT_PARMS(ble_l2cap_stats,
         STATS_SIZE_32), STATS_NAME_INIT_PARMS(ble_l2cap_stats), "ble_l2cap");
-    if (rc != 0) {
+    if (rc != OS_OK) {
         rc = BLE_HS_EOS;
         goto err;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     ble_l2cap_free_mem();

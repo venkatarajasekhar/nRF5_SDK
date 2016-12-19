@@ -54,7 +54,9 @@
 /** Procedure timeout; 30 seconds. */
 #define BLE_SM_TIMEOUT_OS_TICKS             (30 * OS_TICKS_PER_SEC)
 
-STAILQ_HEAD(ble_sm_proc_list, ble_sm_proc);
+struct ble_sm_proc_list {
+    struct list_head proc_hdr;
+};
 
 typedef void ble_sm_rx_fn(uint16_t conn_handle, uint8_t op,
                           struct os_mbuf **om, struct ble_sm_result *res);
@@ -2329,7 +2331,7 @@ ble_sm_connection_broken(uint16_t conn_handle)
 
     memset(&res, 0, sizeof res);
     res.app_status = BLE_HS_ENOTCONN;
-    res.enc_cb = 1;
+    res.enc_cb = TRUE;
 
     ble_sm_process_result(conn_handle, &res);
 }
@@ -2337,7 +2339,10 @@ ble_sm_connection_broken(uint16_t conn_handle)
 static void
 ble_sm_free_mem(void)
 {
-    free(ble_sm_proc_mem);
+    if (ble_sm_proc_mem) {
+        os_free(ble_sm_proc_mem);
+        ble_sm_proc_mem = NULL;
+    }
 }
 
 int
@@ -2347,10 +2352,10 @@ ble_sm_init(void)
 
     ble_sm_free_mem();
 
-    STAILQ_INIT(&ble_sm_procs);
+    INIT_LIST_HEAD(&ble_sm_procs.proc_hdr);
 
     if (ble_hs_cfg.max_l2cap_sm_procs > 0) {
-        ble_sm_proc_mem = malloc(
+        ble_sm_proc_mem = os_malloc(
             OS_MEMPOOL_BYTES(ble_hs_cfg.max_l2cap_sm_procs,
                              sizeof (struct ble_sm_proc)));
         if (ble_sm_proc_mem == NULL) {
@@ -2362,14 +2367,15 @@ ble_sm_init(void)
                              sizeof (struct ble_sm_proc),
                              ble_sm_proc_mem,
                              "ble_sm_proc_pool");
-        if (rc != 0) {
+        if (rc != OS_OK) {
+            rc = BLE_HS_EOS;
             goto err;
         }
     }
 
     ble_sm_sc_init();
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     ble_sm_free_mem();

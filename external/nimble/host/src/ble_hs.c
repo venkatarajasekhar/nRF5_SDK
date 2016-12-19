@@ -133,8 +133,8 @@ ble_hs_lock(void)
     }
 #endif
 
-    rc = os_mutex_pend(&ble_hs_mutex, 0xffffffff);
-    BLE_HS_DBG_ASSERT_EVAL(rc == 0 || rc == OS_NOT_STARTED);
+    rc = os_mutex_pend(&ble_hs_mutex, OS_WAIT_FOREVER);
+    BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK || rc == OS_NOT_STARTED);
 }
 
 void
@@ -578,7 +578,7 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
 
     /* Initialize stats. */
     rc = stats_module_init();
-    if (rc != 0) {
+    if (rc != OS_OK) {
         rc = BLE_HS_EOS;
         goto err;
     }
@@ -586,7 +586,7 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
     ble_hs_hci_init();
 
     rc = ble_hs_conn_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 

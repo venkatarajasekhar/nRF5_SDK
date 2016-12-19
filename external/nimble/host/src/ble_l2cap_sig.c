@@ -620,12 +620,12 @@ ble_l2cap_sig_init(void)
 {
     int rc;
 
-    free(ble_l2cap_sig_proc_mem);
+    os_free(ble_l2cap_sig_proc_mem);
 
     STAILQ_INIT(&ble_l2cap_sig_procs);
 
     if (ble_hs_cfg.max_l2cap_sig_procs > 0) {
-        ble_l2cap_sig_proc_mem = malloc(
+        ble_l2cap_sig_proc_mem = os_malloc(
             OS_MEMPOOL_BYTES(ble_hs_cfg.max_l2cap_sig_procs,
                              sizeof (struct ble_l2cap_sig_proc)));
         if (ble_l2cap_sig_proc_mem == NULL) {
@@ -638,14 +638,14 @@ ble_l2cap_sig_init(void)
                              sizeof (struct ble_l2cap_sig_proc),
                              ble_l2cap_sig_proc_mem,
                              "ble_l2cap_sig_proc_pool");
-        if (rc != 0) {
+        if (rc != OS_OK) {
             goto err;
         }
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
-    free(ble_l2cap_sig_proc_mem);
+    os_free(ble_l2cap_sig_proc_mem);
     return rc;
 }

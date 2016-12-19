@@ -512,8 +512,8 @@ ble_hs_hci_init(void)
     int rc;
 
     rc = os_sem_init(&ble_hs_hci_sem, 0);
-    BLE_HS_DBG_ASSERT_EVAL(rc == 0);
+    BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK);
 
     rc = os_mutex_init(&ble_hs_hci_mutex);
-    BLE_HS_DBG_ASSERT_EVAL(rc == 0);
+    BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK);
 }
