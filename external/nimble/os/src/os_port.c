@@ -162,10 +162,12 @@ os_sem_init(struct os_sem *sem, uint16_t tokens)
 os_error_t
 os_sem_release(struct os_sem *sem)
 {
+    /* Check for valid semaphore */
     if (NULL == sem || NULL == sem->handle) {
         return OS_INVALID_PARM;
     }
 
+    /* OS must be started to release semaphores */
     if (taskSCHEDULER_NOT_STARTED == xTaskGetSchedulerState()) {
         return OS_NOT_STARTED;
     }
@@ -192,10 +194,12 @@ os_sem_release(struct os_sem *sem)
 os_error_t
 os_sem_pend(struct os_sem *sem, uint32_t timeout)
 {
+    /* Check for valid semaphore */
     if (NULL == sem || NULL == sem->handle) {
         return OS_INVALID_PARM;
     }
 
+    /* Check if OS is started */
     if (taskSCHEDULER_NOT_STARTED == xTaskGetSchedulerState()) {
         return OS_NOT_STARTED;
     }
@@ -245,7 +249,7 @@ os_mutex_release(struct os_mutex *mu)
     struct os_task current;
 
     /* Check for valid mutex */
-    if (NULL == mu->handle) {
+    if (NULL == mu || NULL == mu->handle) {
         return (OS_INVALID_PARM);
     }
 
@@ -293,7 +297,7 @@ os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
     struct os_task current;
 
     /* Check for valid mutex */
-    if (NULL == mu->handle) {
+    if (NULL == mu || NULL == mu->handle) {
         return OS_INVALID_PARM;
     }
 
