@@ -81,8 +81,6 @@ struct os_mutex {
     uint16_t mu_level;             /* call nesting level */
 };
 
-struct void os_sched_get_current_task(os_task * current);
-
 os_error_t os_task_init(struct os_task *task, char *name, os_task_func_t func, void *arg,
         uint8_t prio, os_time_t sanity_itvl, os_stack_t *stack_bottom, uint16_t stack_size);
 
@@ -93,5 +91,11 @@ os_error_t os_sem_pend(struct os_sem *sem, uint32_t timeout);
 os_error_t os_mutex_init(struct os_mutex *mu);
 os_error_t os_mutex_release(struct os_mutex *mu);
 os_error_t os_mutex_pend(struct os_mutex *mu, uint32_t timeout);
+int        os_mutex_holden(struct os_mutex *mu);
+
+void       os_sched_get_current_task(os_task * current);
+int        os_sched_check_current_task(struct os_task * current);
+
+int        os_started(void);
 
 #endif

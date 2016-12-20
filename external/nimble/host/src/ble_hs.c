@@ -71,7 +71,7 @@ static struct os_eventq ble_hs_evq;
 
 /* Task structures for the host's parent task. */
 static struct os_eventq *ble_hs_parent_evq;
-static struct os_task *ble_hs_parent_task;
+static struct os_task ble_hs_parent_task;
 
 static struct os_mqueue ble_hs_rx_q;
 static struct os_mqueue ble_hs_tx_q;
@@ -98,16 +98,13 @@ STATS_NAME_END(ble_hs_stats)
 int
 ble_hs_locked_by_cur_task(void)
 {
-    struct os_task *owner;
-
 #if BLE_HS_DEBUG
     if (!os_started()) {
         return ble_hs_dbg_mutex_locked;
     }
 #endif
 
-    owner = ble_hs_mutex.mu_owner;
-    return owner != NULL && owner == os_sched_get_current_task();
+    return os_mutex_holden(&ble_hs_mutex);
 }
 
 /**
@@ -116,7 +113,7 @@ ble_hs_locked_by_cur_task(void)
 int
 ble_hs_is_parent_task(void)
 {
-    return !os_started() || os_sched_get_current_task() == ble_hs_parent_task;
+    return !os_started() || os_sched_check_current_task(&ble_hs_parent_task);
 }
 
 void
@@ -463,7 +460,7 @@ ble_hs_start(void)
 {
     int rc;
 
-    ble_hs_parent_task = os_sched_get_current_task();
+    os_sched_get_current_task(&ble_hs_parent_task);
 
     ble_gatts_start();
 

@@ -168,7 +168,7 @@ os_sem_release(struct os_sem *sem)
     }
 
     /* OS must be started to release semaphores */
-    if (taskSCHEDULER_NOT_STARTED == xTaskGetSchedulerState()) {
+    if (!os_started()) {
         return OS_NOT_STARTED;
     }
 
@@ -200,7 +200,7 @@ os_sem_pend(struct os_sem *sem, uint32_t timeout)
     }
 
     /* Check if OS is started */
-    if (taskSCHEDULER_NOT_STARTED == xTaskGetSchedulerState()) {
+    if (!os_started()) {
         return OS_NOT_STARTED;
     }
 
@@ -226,7 +226,6 @@ os_mutex_init(struct os_mutex *mu)
     }
 
     mu->handle = xSemaphoreCreateMutex();
-    mu->mu_owner.handle = NULL;
     mu->mu_level = 0;
     return (NULL == mu->handle) ? OS_ENOMEM : OS_OK;
 }
@@ -254,7 +253,7 @@ os_mutex_release(struct os_mutex *mu)
     }
 
     /* Check if OS is started */
-    if (taskSCHEDULER_NOT_STARTED == xTaskGetSchedulerState()) {
+    if (!os_started()) {
         return (OS_NOT_STARTED);
     }
 
@@ -294,7 +293,6 @@ os_error_t
 os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
 {
     os_sr_t sr;
-    struct os_task current;
 
     /* Check for valid mutex */
     if (NULL == mu || NULL == mu->handle) {
@@ -302,16 +300,15 @@ os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
     }
 
     /* OS must be started when calling this function */
-    if (taskSCHEDULER_NOT_STARTED == xTaskGetSchedulerState()) {
+    if (!os_started()) {
         return OS_NOT_STARTED;
     }
 
     OS_ENTER_CRITICAL(sr);
 
-    os_sched_get_current_task(&current);
     if (0 == mu->mu_level) {     /* Is this owned? */
         mu->mu_level = 1;
-    } else if (current.handle == xSemaphoreGetMutexHolder(mu->handle)) {   /* Are we owner? */
+    } else if (os_mutex_holden(mu)) {     /* Are we owner? */
         ++mu->mu_level;
         OS_EXIT_CRITICAL(sr);
         return (OS_OK);
@@ -320,6 +317,21 @@ os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
     OS_EXIT_CRITICAL(sr);
 
     return _os_semaphore_take(mu->handle, timeout);
+}
+
+/**
+ * Has the current task owns the mutex.
+ *
+ * @return 1 if the mutex is owned by current task, 0 if it isn't
+ */
+int
+os_mutex_holden(struct os_mutex *mu)
+{
+    TaskHandle_t handle;
+
+    handle = xSemaphoreGetMutexHolder(mu->handle);
+
+    return NULL != handle && xTaskGetCurrentTaskHandle() == handle;
 }
 
 /**
@@ -335,5 +347,27 @@ void
 os_sched_get_current_task(struct os_task * current)
 {
     current->handle = xTaskGetCurrentTaskHandle();
+}
+
+/**
+ * os sched check if the task is the current task
+ * 
+ * @return 1 if it is the current task, 0 if it isn't 
+ */
+int
+os_sched_check_current_task(struct os_task * current)
+{
+    return xTaskGetCurrentTaskHandle() == current->handle;
+}
+
+/**
+ * Has the operating system started.
+ *
+ * @return 1 if the operating system has started, 0 if it hasn't
+ */
+int
+os_started(void)
+{
+    return (taskSCHEDULER_NOT_STARTED != xTaskGetSchedulerState());
 }
 
