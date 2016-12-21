@@ -143,7 +143,7 @@ int ble_att_svr_register_uuid16(uint16_t uuid16, uint8_t flags,
                                 void *cb_arg);
 
 struct ble_att_svr_entry {
-    STAILQ_ENTRY(ble_att_svr_entry) ha_next;
+    struct list_head ha_node;
 
     uint8_t ha_uuid[16];
     uint8_t ha_flags;

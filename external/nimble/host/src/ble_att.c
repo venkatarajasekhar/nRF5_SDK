@@ -447,7 +447,7 @@ ble_att_rx(uint16_t conn_handle, struct os_mbuf **om)
     int rc;
 
     rc = os_mbuf_copydata(*om, 0, 1, &op);
-    if (rc != 0) {
+    if (rc != OS_OK) {
         return BLE_HS_EMSGSIZE;
     }
 
@@ -459,11 +459,11 @@ ble_att_rx(uint16_t conn_handle, struct os_mbuf **om)
     ble_att_inc_rx_stat(op);
 
     rc = entry->bde_fn(conn_handle, om);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 /**
@@ -526,7 +526,7 @@ ble_att_set_preferred_mtu(uint16_t mtu)
 
     ble_hs_unlock();
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 struct ble_l2cap_chan *
@@ -557,9 +557,9 @@ ble_att_init(void)
     rc = stats_init_and_reg(
         STATS_HDR(ble_att_stats), STATS_SIZE_INIT_PARMS(ble_att_stats,
         STATS_SIZE_32), STATS_NAME_INIT_PARMS(ble_att_stats), "ble_att");
-    if (rc != 0) {
+    if (rc != OS_OK) {
         return BLE_HS_EOS;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }

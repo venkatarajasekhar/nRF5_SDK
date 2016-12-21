@@ -25,12 +25,14 @@
 #include "host/ble_uuid.h"
 #include "ble_hs_priv.h"
 
-STAILQ_HEAD(ble_att_svr_entry_list, ble_att_svr_entry);
+struct ble_att_svr_entry_list {
+    struct list_head svr_hdr;
+};
 static struct ble_att_svr_entry_list ble_att_svr_list;
 
 static uint16_t ble_att_svr_id;
 
-static void *ble_att_svr_entry_mem;
+static void *ble_att_svr_entry_mem = NULL;
 static struct os_mempool ble_att_svr_entry_pool;
 
 static void *ble_att_svr_prep_entry_mem;
@@ -2666,8 +2668,10 @@ done:
 static void
 ble_att_svr_free_mem(void)
 {
-    free(ble_att_svr_entry_mem);
-    ble_att_svr_entry_mem = NULL;
+    if (ble_att_svr_entry_mem) {
+        os_free(ble_att_svr_entry_mem);
+        ble_att_svr_entry_mem = NULL;
+    }
 }
 
 int
@@ -2678,7 +2682,7 @@ ble_att_svr_init(void)
     ble_att_svr_free_mem();
 
     if (ble_hs_cfg.max_attrs > 0) {
-        ble_att_svr_entry_mem = malloc(
+        ble_att_svr_entry_mem = os_malloc(
             OS_MEMPOOL_BYTES(ble_hs_cfg.max_attrs,
                              sizeof (struct ble_att_svr_entry)));
         if (ble_att_svr_entry_mem == NULL) {
@@ -2689,7 +2693,7 @@ ble_att_svr_init(void)
         rc = os_mempool_init(&ble_att_svr_entry_pool, ble_hs_cfg.max_attrs,
                              sizeof (struct ble_att_svr_entry),
                              ble_att_svr_entry_mem, "ble_att_svr_entry_pool");
-        if (rc != 0) {
+        if (rc != OS_OK) {
             rc = BLE_HS_EOS;
             goto err;
         }
@@ -2709,17 +2713,17 @@ ble_att_svr_init(void)
                              sizeof (struct ble_att_prep_entry),
                              ble_att_svr_prep_entry_mem,
                              "ble_att_svr_prep_entry_pool");
-        if (rc != 0) {
+        if (rc != OS_OK) {
             rc = BLE_HS_EOS;
             goto err;
         }
     }
 
-    STAILQ_INIT(&ble_att_svr_list);
+    INIT_LIST_HEAD(&ble_att_svr_list.svr_hdr);
 
     ble_att_svr_id = 0;
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     ble_att_svr_free_mem();

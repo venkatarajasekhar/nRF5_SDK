@@ -82,8 +82,8 @@ static struct os_mutex ble_hs_mutex;
 static uint8_t ble_hs_dbg_mutex_locked;
 #endif
 
-STATS_SECT_DECL(ble_hs_stats) ble_hs_stats;
-STATS_NAME_START(ble_hs_stats)
+struct stats_ble_hs_stats STATS_VARIABLE(ble_hs_stats);
+struct stats_name_map STATS_NAME_MAP_NAME(ble_hs_stats)[] = {
     STATS_NAME(ble_hs_stats, conn_create)
     STATS_NAME(ble_hs_stats, conn_delete)
     STATS_NAME(ble_hs_stats, hci_cmd)
@@ -93,7 +93,7 @@ STATS_NAME_START(ble_hs_stats)
     STATS_NAME(ble_hs_stats, hci_timeout)
     STATS_NAME(ble_hs_stats, reset)
     STATS_NAME(ble_hs_stats, sync)
-STATS_NAME_END(ble_hs_stats)
+};
 
 int
 ble_hs_locked_by_cur_task(void)
@@ -588,12 +588,12 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
     }
 
     rc = ble_l2cap_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
     rc = ble_att_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 

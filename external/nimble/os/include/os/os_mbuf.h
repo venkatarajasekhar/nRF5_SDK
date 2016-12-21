@@ -263,7 +263,7 @@ struct os_mbuf *os_mbuf_off(const struct os_mbuf *om, int off,
                             uint16_t *out_off);
 
 /* Copy data from an mbuf to a flat buffer. */
-int os_mbuf_copydata(const struct os_mbuf *m, int off, int len, void *dst);
+os_error_t os_mbuf_copydata(const struct os_mbuf *m, int off, int len, void *dst);
 
 /* Append data onto a mbuf */
 int os_mbuf_append(struct os_mbuf *m, const void *, uint16_t);

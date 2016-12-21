@@ -699,10 +699,10 @@ os_mbuf_off(const struct os_mbuf *om, int off, uint16_t *out_off)
  * @param len The length of the data to copy
  * @param dst The destination buffer to copy into
  *
- * @return                      0 on success;
- *                              -1 if the mbuf does not contain enough data.
+ * @return                      OS_OK     on success;
+ *                              OS_EINVAL if the mbuf does not contain enough data.
  */
-int
+os_error_t
 os_mbuf_copydata(const struct os_mbuf *m, int off, int len, void *dst)
 {
     unsigned int count;
@@ -711,12 +711,12 @@ os_mbuf_copydata(const struct os_mbuf *m, int off, int len, void *dst)
     struct os_mbuf *src_om;
 
     if (!len) {
-        return 0;
+        return OS_OK;
     }
 
     src_om = os_mbuf_off(m, off, &src_off);
     if (NULL == src_om) {
-        return (-1);
+        return OS_EINVAL;
     }
 
     udst = dst;
@@ -730,7 +730,7 @@ os_mbuf_copydata(const struct os_mbuf *m, int off, int len, void *dst)
         src_om = (src_om == m) ? NULL : src_om;
     }
 
-    return (len > 0 ? -1 : 0);
+    return (len > 0 ? OS_EINVAL : OS_OK);
 }
 
 /**

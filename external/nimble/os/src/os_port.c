@@ -245,30 +245,34 @@ os_mutex_init(struct os_mutex *mu)
 os_error_t
 os_mutex_release(struct os_mutex *mu)
 {
-    struct os_task current;
+    os_sr_t sr;
 
     /* Check for valid mutex */
     if (NULL == mu || NULL == mu->handle) {
-        return (OS_INVALID_PARM);
+        return OS_INVALID_PARM;
     }
 
     /* Check if OS is started */
     if (!os_started()) {
-        return (OS_NOT_STARTED);
+        return OS_NOT_STARTED;
     }
 
+    OS_ENTER_CRITICAL(sr);
+
     /* We better own this mutex! */
-    os_sched_get_current_task(&current);
-    if (0 == mu->mu_level ||
-        current.handle != xSemaphoreGetMutexHolder(mu->handle)) {
-        return (OS_BAD_MUTEX);
+    if (0 == mu->mu_level || os_mutex_holden(mu)) {
+        OS_EXIT_CRITICAL(sr);
+        return OS_BAD_MUTEX;
     }
 
     /* Decrement nesting level by 1. If not zero, nested (so dont release!) */
     --mu->mu_level;
     if (mu->mu_level != 0) {
-        return (OS_OK);
+        OS_EXIT_CRITICAL(sr);
+        return OS_OK;
     }
+
+    OS_EXIT_CRITICAL(sr);
 
     return _os_semaphore_give(mu->handle);
 }
@@ -311,7 +315,7 @@ os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
     } else if (os_mutex_holden(mu)) {     /* Are we owner? */
         ++mu->mu_level;
         OS_EXIT_CRITICAL(sr);
-        return (OS_OK);
+        return OS_OK;
     }
 
     OS_EXIT_CRITICAL(sr);
@@ -331,7 +335,7 @@ os_mutex_holden(struct os_mutex *mu)
 
     handle = xSemaphoreGetMutexHolder(mu->handle);
 
-    return NULL != handle && xTaskGetCurrentTaskHandle() == handle;
+    return (NULL != handle && xTaskGetCurrentTaskHandle() == handle);
 }
 
 /**
@@ -357,7 +361,7 @@ os_sched_get_current_task(struct os_task * current)
 int
 os_sched_check_current_task(struct os_task * current)
 {
-    return xTaskGetCurrentTaskHandle() == current->handle;
+    return (xTaskGetCurrentTaskHandle() == current->handle);
 }
 
 /**

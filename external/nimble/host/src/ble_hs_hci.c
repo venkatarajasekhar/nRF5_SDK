@@ -51,8 +51,8 @@ ble_hs_hci_lock(void)
 {
     int rc;
 
-    rc = os_mutex_pend(&ble_hs_hci_mutex, 0xffffffff);
-    BLE_HS_DBG_ASSERT_EVAL(rc == 0 || rc == OS_NOT_STARTED);
+    rc = os_mutex_pend(&ble_hs_hci_mutex, OS_WAIT_FOREVER);
+    BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK || rc == OS_NOT_STARTED);
 }
 
 static void
@@ -61,7 +61,7 @@ ble_hs_hci_unlock(void)
     int rc;
 
     rc = os_mutex_release(&ble_hs_hci_mutex);
-    BLE_HS_DBG_ASSERT_EVAL(rc == 0 || rc == OS_NOT_STARTED);
+    BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK || rc == OS_NOT_STARTED);
 }
 
 int
@@ -74,7 +74,7 @@ ble_hs_hci_set_buf_sz(uint16_t pktlen, uint8_t max_pkts)
     ble_hs_hci_buf_sz = pktlen;
     ble_hs_hci_max_pkts = max_pkts;
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 static int
@@ -117,7 +117,7 @@ ble_hs_hci_rx_cmd_complete(uint8_t event_code, uint8_t *data, int len,
         out_ack->bha_params_len = 0;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 static int
@@ -144,7 +144,7 @@ ble_hs_hci_rx_cmd_status(uint8_t event_code, uint8_t *data, int len,
     out_ack->bha_params_len = 0;
     out_ack->bha_status = BLE_HS_HCI_ERR(status);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 static int
@@ -189,7 +189,7 @@ ble_hs_hci_process_ack(uint16_t expected_opcode,
         break;
     }
 
-    if (rc == 0) {
+    if (rc == BLE_HS_ENONE) {
         if (params_buf == NULL) {
             out_ack->bha_params_len = 0;
         } else {
@@ -206,7 +206,7 @@ ble_hs_hci_process_ack(uint16_t expected_opcode,
         }
     }
 
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         STATS_INC(ble_hs_stats, hci_invalid_ack);
     }
 
@@ -231,7 +231,7 @@ ble_hs_hci_wait_for_ack(void)
     rc = os_sem_pend(&ble_hs_hci_sem, BLE_HCI_CMD_TIMEOUT);
     switch (rc) {
     case OS_OK:
-        rc = 0;
+        rc = BLE_HS_ENONE;
         BLE_HS_DBG_ASSERT(ble_hs_hci_ack != NULL);
         break;
     case OS_TIMEOUT:
@@ -261,18 +261,18 @@ ble_hs_hci_cmd_tx(void *cmd, void *evt_buf, uint8_t evt_buf_len,
     ble_hs_hci_lock();
 
     rc = ble_hs_hci_cmd_send_buf(cmd);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto done;
     }
 
     rc = ble_hs_hci_wait_for_ack();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         ble_hs_sched_reset(rc);
         goto done;
     }
 
     rc = ble_hs_hci_process_ack(opcode, evt_buf, evt_buf_len, &ack);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         ble_hs_sched_reset(rc);
         goto done;
     }
@@ -299,11 +299,11 @@ ble_hs_hci_cmd_tx_empty_ack(void *cmd)
     int rc;
 
     rc = ble_hs_hci_cmd_tx(cmd, NULL, 0, NULL);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 void
@@ -334,15 +334,15 @@ ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
     case BLE_HCI_EVCODE_COMMAND_COMPLETE:
     case BLE_HCI_EVCODE_COMMAND_STATUS:
         if (hci_ev[3] == 0 && hci_ev[4] == 0) {
-            enqueue = 1;
+            enqueue = TRUE;
         } else {
             ble_hs_hci_rx_ack(hci_ev);
-            enqueue = 0;
+            enqueue = FALSE;
         }
         break;
 
     default:
-        enqueue = 1;
+        enqueue = TRUE;
         break;
     }
 
@@ -350,7 +350,7 @@ ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
         ble_hs_enqueue_hci_event(hci_ev);
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 
@@ -384,7 +384,7 @@ ble_hs_hci_split_frag(struct os_mbuf **om, struct os_mbuf **out_frag)
         /* Final fragment. */
         *out_frag = *om;
         *om = NULL;
-        return 0;
+        return BLE_HS_ENONE;
     }
 
     frag = ble_hs_mbuf_acm_pkt();
@@ -395,7 +395,7 @@ ble_hs_hci_split_frag(struct os_mbuf **om, struct os_mbuf **out_frag)
 
     /* Move data from the front of the packet into the fragment mbuf. */
     rc = os_mbuf_appendfrom(frag, *om, 0, ble_hs_hci_buf_sz);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         rc = BLE_HS_ENOMEM;
         goto err;
     }
@@ -403,7 +403,7 @@ ble_hs_hci_split_frag(struct os_mbuf **om, struct os_mbuf **out_frag)
 
     /* More fragments to follow. */
     *out_frag = frag;
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     os_mbuf_free_chain(frag);
@@ -490,17 +490,17 @@ ble_hs_hci_acl_tx(struct ble_hs_conn *connection, struct os_mbuf *txom)
         }
 
         rc = ble_hs_tx_data(frag);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             goto err;
         }
 
         connection->bhc_outstanding_pkts++;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
-    BLE_HS_DBG_ASSERT(rc != 0);
+    BLE_HS_DBG_ASSERT(rc != BLE_HS_ENONE);
 
     os_mbuf_free_chain(txom);
     return rc;

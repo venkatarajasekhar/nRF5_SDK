@@ -58,7 +58,8 @@ struct os_event;
 #define BLE_HS_SYNC_STATE_BRINGUP       1
 #define BLE_HS_SYNC_STATE_GOOD          2
 
-STATS_SECT_START(ble_hs_stats)
+struct stats_ble_hs_stats {
+    struct stats_hdr s_hdr;
     STATS_SECT_ENTRY(conn_create)
     STATS_SECT_ENTRY(conn_delete)
     STATS_SECT_ENTRY(hci_cmd)
@@ -68,8 +69,8 @@ STATS_SECT_START(ble_hs_stats)
     STATS_SECT_ENTRY(hci_timeout)
     STATS_SECT_ENTRY(reset)
     STATS_SECT_ENTRY(sync)
-STATS_SECT_END
-extern STATS_SECT_DECL(ble_hs_stats) ble_hs_stats;
+};
+extern struct stats_ble_hs_stats STATS_VARIABLE(ble_hs_stats);
 
 extern struct ble_hs_cfg ble_hs_cfg;
 extern struct os_mbuf_pool ble_hs_mbuf_pool;

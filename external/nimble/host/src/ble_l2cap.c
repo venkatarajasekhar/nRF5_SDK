@@ -72,7 +72,7 @@ ble_l2cap_chan_free(struct ble_l2cap_chan *chan)
     }
 
     rc = os_memblock_put(&ble_l2cap_chan_pool, chan);
-    BLE_HS_DBG_ASSERT_EVAL(rc == 0);
+    BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK);
 
     STATS_INC(ble_l2cap_stats, chan_delete);
 }
@@ -112,7 +112,7 @@ ble_l2cap_parse_hdr(struct os_mbuf *om, int off,
     l2cap_hdr->blh_len = le16toh(&l2cap_hdr->blh_len);
     l2cap_hdr->blh_cid = le16toh(&l2cap_hdr->blh_cid);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 struct os_mbuf *
@@ -173,7 +173,7 @@ ble_l2cap_rx_payload(struct ble_hs_conn *conn, struct ble_l2cap_chan *chan,
         *out_rx_cb = chan->blc_rx_fn;
         *out_rx_buf = chan->blc_rx_buf;
         ble_l2cap_forget_rx(conn, chan);
-        rc = 0;
+        rc = BLE_HS_ENONE;
     } else {
         /* More fragments remain. */
         rc = BLE_HS_EAGAIN;
@@ -199,7 +199,7 @@ ble_l2cap_rx(struct ble_hs_conn *conn,
     case BLE_HCI_PB_FIRST_FLUSH:
         /* First fragment. */
         rc = ble_l2cap_parse_hdr(om, 0, &l2cap_hdr);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             goto err;
         }
 
@@ -253,11 +253,11 @@ ble_l2cap_rx(struct ble_hs_conn *conn,
 
     rc = ble_l2cap_rx_payload(conn, chan, om, out_rx_cb, out_rx_buf);
     om = NULL;
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     os_mbuf_free_chain(om);
@@ -284,12 +284,7 @@ ble_l2cap_tx(struct ble_hs_conn *conn, struct ble_l2cap_chan *chan,
         return BLE_HS_ENOMEM;
     }
 
-    rc = ble_hs_hci_acl_tx(conn, txom);
-    if (rc != 0) {
-        return rc;
-    }
-
-    return 0;
+    return ble_hs_hci_acl_tx(conn, txom);
 }
 
 static void
@@ -330,7 +325,7 @@ ble_l2cap_init(void)
     }
 
     rc = ble_sm_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
