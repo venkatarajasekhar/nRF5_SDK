@@ -78,7 +78,6 @@ struct os_sem {
 
 struct os_mutex {
     SemaphoreHandle_t handle;
-    uint16_t mu_level;             /* call nesting level */
 };
 
 os_error_t os_task_init(struct os_task *task, char *name, os_task_func_t func, void *arg,

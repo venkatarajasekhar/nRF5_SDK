@@ -52,7 +52,7 @@ os_task_init(struct os_task *task, char *name, os_task_func_t func, void *arg,
 
     status = xTaskGenericCreate(func, name, stack_size * sizeof(os_stack_t), arg,
                                 prio, &task->handle, stack_bottom, NULL);
-    switch(status) {
+    switch (status) {
         case pdPASS:
             ret = OS_OK;
             break;
@@ -61,64 +61,6 @@ os_task_init(struct os_task *task, char *name, os_task_func_t func, void *arg,
             break;
         default:
             ret = OS_EINVAL;
-            break;
-    }
-
-    return ret;
-}
-
-static os_error_t
-_os_semaphore_give(SemaphoreHandle_t handle)
-{
-    BaseType_t status;
-    os_error_t ret;
-
-    if(__get_IPSR() != 0) {
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        status = xSemaphoreGiveFromISR(handle, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    } else {
-        status = xSemaphoreGive(handle);
-    }
-
-    switch(status) {
-        case pdPASS:
-            ret = OS_OK;
-            break;
-        case errQUEUE_FULL:
-            ret = OS_EINVAL;
-            break;
-        default:
-            ret = OS_ENOENT;
-            break;
-    }
-
-    return ret;
-}
-
-static os_error_t
-_os_semaphore_take(SemaphoreHandle_t handle, uint32_t timeout)
-{
-    BaseType_t status;
-    os_error_t ret;
-
-    if(__get_IPSR() != 0) {
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        status = xSemaphoreTakeFromISR(handle, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    } else {
-        status = xSemaphoreTake(handle, timeout);
-    }
-
-    switch(status) {
-        case pdPASS:
-            ret = OS_OK;
-            break;
-        case errQUEUE_EMPTY:
-            ret = OS_TIMEOUT;
-            break;
-        default:
-            ret = OS_ENOENT;
             break;
     }
 
@@ -140,7 +82,7 @@ _os_semaphore_take(SemaphoreHandle_t handle, uint32_t timeout)
 os_error_t
 os_sem_init(struct os_sem *sem, uint16_t tokens)
 {
-    if(NULL == sem) {
+    if (NULL == sem) {
         return OS_INVALID_PARM;
     }
 
@@ -162,6 +104,9 @@ os_sem_init(struct os_sem *sem, uint16_t tokens)
 os_error_t
 os_sem_release(struct os_sem *sem)
 {
+    BaseType_t status;
+    os_error_t ret;
+
     /* Check for valid semaphore */
     if (NULL == sem || NULL == sem->handle) {
         return OS_INVALID_PARM;
@@ -172,7 +117,27 @@ os_sem_release(struct os_sem *sem)
         return OS_NOT_STARTED;
     }
 
-    return _os_semaphore_give(sem->handle);
+    if (__get_IPSR() != 0) {
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        status = xSemaphoreGiveFromISR(sem->handle, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    } else {
+        status = xSemaphoreGive(sem->handle);
+    }
+
+    switch(status) {
+        case pdPASS:
+            ret = OS_OK;
+            break;
+        case errQUEUE_FULL:
+            ret = OS_EINVAL;
+            break;
+        default:
+            ret = OS_ENOENT;
+            break;
+    }
+
+    return ret;
 }
 
 /**
@@ -194,6 +159,9 @@ os_sem_release(struct os_sem *sem)
 os_error_t
 os_sem_pend(struct os_sem *sem, uint32_t timeout)
 {
+    BaseType_t status;
+    os_error_t ret;
+
     /* Check for valid semaphore */
     if (NULL == sem || NULL == sem->handle) {
         return OS_INVALID_PARM;
@@ -204,7 +172,27 @@ os_sem_pend(struct os_sem *sem, uint32_t timeout)
         return OS_NOT_STARTED;
     }
 
-    return _os_semaphore_take(sem->handle, timeout);
+    if (__get_IPSR() != 0) {
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        status = xSemaphoreTakeFromISR(sem->handle, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    } else {
+        status = xSemaphoreTake(sem->handle, timeout);
+    }
+
+    switch(status) {
+        case pdPASS:
+            ret = OS_OK;
+            break;
+        case errQUEUE_EMPTY:
+            ret = OS_TIMEOUT;
+            break;
+        default:
+            ret = OS_ENOENT;
+            break;
+    }
+
+    return ret;
 }
 
 /**
@@ -221,12 +209,11 @@ os_sem_pend(struct os_sem *sem, uint32_t timeout)
 os_error_t
 os_mutex_init(struct os_mutex *mu)
 {
-    if(NULL == mu) {
+    if (NULL == mu) {
         return OS_INVALID_PARM;
     }
 
-    mu->handle = xSemaphoreCreateMutex();
-    mu->mu_level = 0;
+    mu->handle = xSemaphoreCreateRecursiveMutex();
     return (NULL == mu->handle) ? OS_ENOMEM : OS_OK;
 }
 
@@ -245,7 +232,8 @@ os_mutex_init(struct os_mutex *mu)
 os_error_t
 os_mutex_release(struct os_mutex *mu)
 {
-    os_sr_t sr;
+    BaseType_t status;
+    os_error_t ret;
 
     /* Check for valid mutex */
     if (NULL == mu || NULL == mu->handle) {
@@ -257,24 +245,25 @@ os_mutex_release(struct os_mutex *mu)
         return OS_NOT_STARTED;
     }
 
-    OS_ENTER_CRITICAL(sr);
-
-    /* We better own this mutex! */
-    if (0 == mu->mu_level || os_mutex_holden(mu)) {
-        OS_EXIT_CRITICAL(sr);
-        return OS_BAD_MUTEX;
+    if (__get_IPSR() != 0) {
+        return OS_ERR_IN_ISR;
     }
 
-    /* Decrement nesting level by 1. If not zero, nested (so dont release!) */
-    --mu->mu_level;
-    if (mu->mu_level != 0) {
-        OS_EXIT_CRITICAL(sr);
-        return OS_OK;
+    status = xSemaphoreGiveRecursive(mu->handle);
+
+    switch (status) {
+        case pdPASS:
+            ret = OS_OK;
+            break;
+        case pdFAIL:
+            ret = OS_BAD_MUTEX;
+            break;
+        default:
+            ret = OS_ENOENT;
+            break;
     }
 
-    OS_EXIT_CRITICAL(sr);
-
-    return _os_semaphore_give(mu->handle);
+    return ret;
 }
 
 /**
@@ -296,7 +285,8 @@ os_mutex_release(struct os_mutex *mu)
 os_error_t
 os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
 {
-    os_sr_t sr;
+    BaseType_t status;
+    os_error_t ret;
 
     /* Check for valid mutex */
     if (NULL == mu || NULL == mu->handle) {
@@ -308,19 +298,25 @@ os_mutex_pend(struct os_mutex *mu, uint32_t timeout)
         return OS_NOT_STARTED;
     }
 
-    OS_ENTER_CRITICAL(sr);
-
-    if (0 == mu->mu_level) {     /* Is this owned? */
-        mu->mu_level = 1;
-    } else if (os_mutex_holden(mu)) {     /* Are we owner? */
-        ++mu->mu_level;
-        OS_EXIT_CRITICAL(sr);
-        return OS_OK;
+    if (__get_IPSR() != 0) {
+        return OS_ERR_IN_ISR;
     }
 
-    OS_EXIT_CRITICAL(sr);
+    status = xSemaphoreTakeRecursive(mu->handle, timeout);
 
-    return _os_semaphore_take(mu->handle, timeout);
+    switch (status) {
+        case pdPASS:
+            ret = OS_OK;
+            break;
+        case errQUEUE_EMPTY:
+            ret = OS_TIMEOUT;
+            break;
+        default:
+            ret = OS_ENOENT;
+            break;
+    }
+
+    return ret;
 }
 
 /**
