@@ -23,14 +23,14 @@
 struct os_mempool;
 struct os_mbuf_pool;
 
-int mem_malloc_mempool(struct os_mempool *mempool, int num_blocks,
+os_error_t mem_malloc_mempool(struct os_mempool *mempool, int num_blocks,
                        int block_size, char *name, void **out_buf);
 
-int mem_malloc_mbuf_pool(struct os_mempool *mempool,
+os_error_t mem_malloc_mbuf_pool(struct os_mempool *mempool,
                          struct os_mbuf_pool *mbuf_pool, int num_blocks,
                          int block_size, char *name,
                          void **out_buf);
-int mem_malloc_mbufpkt_pool(struct os_mempool *mempool,
+os_error_t mem_malloc_mbufpkt_pool(struct os_mempool *mempool,
                             struct os_mbuf_pool *mbuf_pool, int num_blocks,
                             int block_size, char *name,
                             void **out_buf);

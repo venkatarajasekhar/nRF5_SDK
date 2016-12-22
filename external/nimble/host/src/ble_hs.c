@@ -598,12 +598,12 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
     }
 
     rc = ble_att_svr_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
     rc = ble_gap_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 

@@ -31,7 +31,8 @@ struct hci_encrypt_change;
 struct ble_hs_hci_ack;
 struct ble_hs_adv;
 
-STATS_SECT_START(ble_gap_stats)
+struct stats_ble_gap_stats {
+    struct stats_hdr s_hdr;
     STATS_SECT_ENTRY(wl_set)
     STATS_SECT_ENTRY(wl_set_fail)
     STATS_SECT_ENTRY(adv_stop)
@@ -63,9 +64,9 @@ STATS_SECT_START(ble_gap_stats)
     STATS_SECT_ENTRY(discover_cancel_fail)
     STATS_SECT_ENTRY(security_initiate)
     STATS_SECT_ENTRY(security_initiate_fail)
-STATS_SECT_END
+};
 
-extern STATS_SECT_DECL(ble_gap_stats) ble_gap_stats;
+extern struct stats_ble_gap_stats STATS_VARIABLE(ble_gap_stats);
 
 #define BLE_GAP_CONN_MODE_MAX               3
 #define BLE_GAP_DISC_MODE_MAX               3

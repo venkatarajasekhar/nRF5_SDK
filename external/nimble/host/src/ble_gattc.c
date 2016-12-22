@@ -196,7 +196,9 @@ struct ble_gattc_proc {
     };
 };
 
-STAILQ_HEAD(ble_gattc_proc_list, ble_gattc_proc);
+struct ble_gattc_proc_list {
+    struct list_head proc_hdr;
+};
 
 /**
  * Error functions - these handle an incoming ATT error response and apply it
@@ -317,7 +319,7 @@ static const struct ble_gattc_rx_exec_entry {
 };
 
 /* Maintains the list of active GATT client procedures. */
-static void *ble_gattc_proc_mem;
+static void *ble_gattc_proc_mem = NULL;
 static struct os_mempool ble_gattc_proc_pool;
 static struct ble_gattc_proc_list ble_gattc_procs;
 
@@ -4564,12 +4566,15 @@ ble_gattc_init(void)
 {
     int rc;
 
-    free(ble_gattc_proc_mem);
+    if (ble_gattc_proc_mem) {
+        os_free(ble_gattc_proc_mem);
+        ble_gattc_proc_mem = NULL;
+    }
 
-    STAILQ_INIT(&ble_gattc_procs);
+    INIT_LIST_HEAD(&ble_gattc_procs.proc_hdr);
 
     if (ble_hs_cfg.max_gattc_procs > 0) {
-        ble_gattc_proc_mem = malloc(
+        ble_gattc_proc_mem = os_malloc(
             OS_MEMPOOL_BYTES(ble_hs_cfg.max_gattc_procs,
                              sizeof (struct ble_gattc_proc)));
         if (ble_gattc_proc_mem == NULL) {
@@ -4582,7 +4587,7 @@ ble_gattc_init(void)
                              sizeof (struct ble_gattc_proc),
                              ble_gattc_proc_mem,
                              "ble_gattc_proc_pool");
-        if (rc != 0) {
+        if (rc != OS_OK) {
             goto err;
         }
     }
@@ -4598,8 +4603,10 @@ ble_gattc_init(void)
     return 0;
 
 err:
-    free(ble_gattc_proc_mem);
-    ble_gattc_proc_mem = NULL;
+    if (ble_gattc_proc_mem) {
+        os_free(ble_gattc_proc_mem);
+        ble_gattc_proc_mem = NULL;
+    }
 
     return rc;
 }

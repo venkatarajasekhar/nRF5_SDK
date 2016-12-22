@@ -266,7 +266,7 @@ err:
  *
  * @return 0 on success, error code on failure.
  */
-int
+os_error_t
 os_mbuf_pool_init(struct os_mbuf_pool *omp, struct os_mempool *mp,
                   uint16_t buf_len, uint16_t nbufs)
 {
@@ -274,7 +274,7 @@ os_mbuf_pool_init(struct os_mbuf_pool *omp, struct os_mempool *mp,
     omp->omp_mbuf_count = nbufs;
     omp->omp_pool = mp;
 
-    return (0);
+    return (OS_OK);
 }
 
 /**

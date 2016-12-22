@@ -126,7 +126,7 @@ static bssnz_t struct ble_gap_master_state ble_gap_master;
  * The state of the in-progress slave connection.  If no slave connection is
  * currently in progress, then the op field is set to BLE_GAP_OP_NULL.
  */
-static bssnz_t struct {
+struct ble_gap_slave_state {
     uint8_t op;
 
     unsigned exp_set:1;
@@ -144,7 +144,8 @@ static bssnz_t struct {
     uint8_t rsp_data_len;
 
     unsigned adv_auto_flags:1;
-} ble_gap_slave;
+};
+static bssnz_t struct ble_gap_slave_state ble_gap_slave;
 
 struct ble_gap_update_entry {
     SLIST_ENTRY(ble_gap_update_entry) next;
@@ -152,7 +153,9 @@ struct ble_gap_update_entry {
     os_time_t exp_os_ticks;
     uint16_t conn_handle;
 };
-SLIST_HEAD(ble_gap_update_entry_list, ble_gap_update_entry);
+struct ble_gap_update_entry_list {
+    struct list_head entry_hdr;
+};
 
 struct ble_gap_snapshot {
     struct ble_gap_conn_desc *desc;
@@ -160,7 +163,7 @@ struct ble_gap_snapshot {
     void *cb_arg;
 };
 
-static void *ble_gap_update_entry_mem;
+static void *ble_gap_update_entry_mem = NULL;
 static struct os_mempool ble_gap_update_entry_pool;
 static struct ble_gap_update_entry_list ble_gap_update_entries;
 
@@ -177,8 +180,8 @@ static int ble_gap_adv_enable_tx(int enable);
 static int ble_gap_conn_cancel_tx(void);
 static int ble_gap_disc_enable_tx(int enable, int filter_duplicates);
 
-STATS_SECT_DECL(ble_gap_stats) ble_gap_stats;
-STATS_NAME_START(ble_gap_stats)
+struct stats_ble_gap_stats STATS_VARIABLE(ble_gap_stats);
+struct stats_name_map STATS_NAME_MAP_NAME(ble_gap_stats)[] = {
     STATS_NAME(ble_gap_stats, wl_set)
     STATS_NAME(ble_gap_stats, wl_set_fail)
     STATS_NAME(ble_gap_stats, adv_stop)
@@ -210,7 +213,7 @@ STATS_NAME_START(ble_gap_stats)
     STATS_NAME(ble_gap_stats, discover_cancel_fail)
     STATS_NAME(ble_gap_stats, security_initiate)
     STATS_NAME(ble_gap_stats, security_initiate_fail)
-STATS_NAME_END(ble_gap_stats)
+};
 
 /*****************************************************************************
  * $debug                                                                    *
@@ -3010,22 +3013,22 @@ ble_gap_security_initiate(uint16_t conn_handle)
          * procedure.
          */
         rc = ble_store_read_peer_sec(&key_sec, &value_sec);
-        if (rc == 0 && value_sec.ltk_present) {
+        if (rc == BLE_HS_ENONE && value_sec.ltk_present) {
             rc = ble_sm_enc_initiate(conn_handle, value_sec.ltk,
                                      value_sec.ediv, value_sec.rand_num,
                                      value_sec.authenticated);
-            if (rc != 0) {
+            if (rc != BLE_HS_ENONE) {
                 goto done;
             }
         } else {
             rc = ble_sm_pair_initiate(conn_handle);
-            if (rc != 0) {
+            if (rc != BLE_HS_ENONE) {
                 goto done;
             }
         }
     } else {
         rc = ble_sm_slave_initiate(conn_handle);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             goto done;
         }
     }
@@ -3033,7 +3036,7 @@ ble_gap_security_initiate(uint16_t conn_handle)
     rc = 0;
 
 done:
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         STATS_INC(ble_gap_stats, security_initiate_fail);
     }
 
@@ -3243,12 +3246,15 @@ ble_gap_init(void)
 {
     int rc;
 
-    free(ble_gap_update_entry_mem);
+    if (ble_gap_update_entry_mem) {
+        os_free(ble_gap_update_entry_mem);
+        ble_gap_update_entry_mem = NULL;
+    }
 
     memset(&ble_gap_master, 0, sizeof ble_gap_master);
     memset(&ble_gap_slave, 0, sizeof ble_gap_slave);
 
-    SLIST_INIT(&ble_gap_update_entries);
+    INIT_LIST_HEAD(&ble_gap_update_entries.entry_hdr);
 
     rc = mem_malloc_mempool(&ble_gap_update_entry_pool,
                             BLE_GAP_MAX_UPDATE_ENTRIES,
@@ -3256,7 +3262,8 @@ ble_gap_init(void)
                             "ble_gap_update",
                             &ble_gap_update_entry_mem);
     switch (rc) {
-    case 0:
+    case OS_OK:
+        rc = BLE_HS_ENONE;
         break;
     case OS_ENOMEM:
         rc = BLE_HS_ENOMEM;
@@ -3269,15 +3276,17 @@ ble_gap_init(void)
     rc = stats_init_and_reg(
         STATS_HDR(ble_gap_stats), STATS_SIZE_INIT_PARMS(ble_gap_stats,
         STATS_SIZE_32), STATS_NAME_INIT_PARMS(ble_gap_stats), "ble_gap");
-    if (rc != 0) {
+    if (rc != OS_OK) {
         goto err;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
-    free(ble_gap_update_entry_mem);
-    ble_gap_update_entry_mem = NULL;
+    if (ble_gap_update_entry_mem) {
+        os_free(ble_gap_update_entry_mem);
+        ble_gap_update_entry_mem = NULL;
+    }
 
     return rc;
 }

@@ -137,11 +137,11 @@ ble_store_read_peer_sec(struct ble_store_key_sec *key_sec,
     store_value = (void *)value_sec;
     rc = ble_store_read(BLE_STORE_OBJ_TYPE_PEER_SEC, store_key, store_value);
 
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 int

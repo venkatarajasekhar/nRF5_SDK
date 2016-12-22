@@ -22,6 +22,13 @@
 
 #include "main.h"
 
+/* Define special stackos sections */
+#define sec_data_core               __attribute__((section(".data.core")))
+#define sec_bss_core                __attribute__((section(".bss.core")))
+
+/* More convenient section placement macros. */
+#define bssnz_t
+
 #define OS_TICKS_PER_SEC            configTICK_RATE_HZ
 
 #define OS_WAIT_FOREVER             (-1)

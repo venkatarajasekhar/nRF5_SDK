@@ -35,7 +35,7 @@
  *                              OS_ENOMEM on malloc failure;
  *                              Other OS code on unexpected error.
  */
-int
+os_error_t
 mem_malloc_mempool(struct os_mempool *mempool, int num_blocks, int block_size,
                    char *name, void **out_buf)
 {
@@ -45,7 +45,7 @@ mem_malloc_mempool(struct os_mempool *mempool, int num_blocks, int block_size,
     block_size = OS_ALIGN(block_size, OS_ALIGNMENT);
 
     if (num_blocks > 0) {
-        buf = malloc(OS_MEMPOOL_BYTES(num_blocks, block_size));
+        buf = os_malloc(OS_MEMPOOL_BYTES(num_blocks, block_size));
         if (buf == NULL) {
             return OS_ENOMEM;
         }
@@ -54,8 +54,8 @@ mem_malloc_mempool(struct os_mempool *mempool, int num_blocks, int block_size,
     }
 
     rc = os_mempool_init(mempool, num_blocks, block_size, buf, name);
-    if (rc != 0) {
-        free(buf);
+    if (rc != OS_OK) {
+        os_free(buf);
         return rc;
     }
 
@@ -63,7 +63,7 @@ mem_malloc_mempool(struct os_mempool *mempool, int num_blocks, int block_size,
         *out_buf = buf;
     }
 
-    return 0;
+    return OS_OK;
 }
 
 /**
@@ -84,7 +84,7 @@ mem_malloc_mempool(struct os_mempool *mempool, int num_blocks, int block_size,
  *                              OS_ENOMEM on malloc failure;
  *                              Other OS code on unexpected error.
  */
-int
+os_error_t
 mem_malloc_mbuf_pool(struct os_mempool *mempool,
                      struct os_mbuf_pool *mbuf_pool, int num_blocks,
                      int block_size, char *name,
@@ -96,13 +96,13 @@ mem_malloc_mbuf_pool(struct os_mempool *mempool,
     block_size = OS_ALIGN(block_size + sizeof (struct os_mbuf), OS_ALIGNMENT);
 
     rc = mem_malloc_mempool(mempool, num_blocks, block_size, name, &buf);
-    if (rc != 0) {
+    if (rc != OS_OK) {
         return rc;
     }
 
     rc = os_mbuf_pool_init(mbuf_pool, mempool, block_size, num_blocks);
-    if (rc != 0) {
-        free(buf);
+    if (rc != OS_OK) {
+        os_free(buf);
         return rc;
     }
 
@@ -110,7 +110,7 @@ mem_malloc_mbuf_pool(struct os_mempool *mempool,
         *out_buf = buf;
     }
 
-    return 0;
+    return OS_OK;
 }
 
 /**
@@ -131,16 +131,13 @@ mem_malloc_mbuf_pool(struct os_mempool *mempool,
  *                              OS_ENOMEM on malloc failure;
  *                              Other OS code on unexpected error.
  */
-int
+os_error_t
 mem_malloc_mbufpkt_pool(struct os_mempool *mempool,
                         struct os_mbuf_pool *mbuf_pool, int num_blocks,
                         int block_size, char *name,
                         void **out_buf)
 {
-    int rc;
-
-    rc = mem_malloc_mbuf_pool(mempool, mbuf_pool, num_blocks,
+    return mem_malloc_mbuf_pool(mempool, mbuf_pool, num_blocks,
                               block_size + sizeof (struct os_mbuf_pkthdr),
                               name, out_buf);
-    return rc;
 }

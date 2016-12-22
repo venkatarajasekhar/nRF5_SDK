@@ -246,7 +246,7 @@ void os_msys_reset(void);
 struct os_mbuf *os_msys_get_pkthdr(uint16_t dsize, uint16_t user_hdr_len);
 
 /* Initialize a mbuf pool */
-int os_mbuf_pool_init(struct os_mbuf_pool *, struct os_mempool *mp, 
+os_error_t os_mbuf_pool_init(struct os_mbuf_pool *, struct os_mempool *mp, 
         uint16_t, uint16_t);
 
 /* Allocate a new mbuf out of the os_mbuf_pool */ 
