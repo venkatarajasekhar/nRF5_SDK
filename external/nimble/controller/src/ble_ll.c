@@ -1188,7 +1188,7 @@ ble_ll_init(uint8_t ll_task_prio, uint8_t num_acl_pkts, uint16_t acl_pkt_size)
     rc = os_mempool_init(&g_ble_ll_hci_ev_pool, 16,
                          sizeof (struct os_event), ble_ll_hci_os_event_buf,
                          "g_ble_ll_hci_ev_pool");
-    assert(rc == 0);
+    assert(rc == OS_OK);
 
     /* Initialize LL HCI */
     ble_ll_hci_init();

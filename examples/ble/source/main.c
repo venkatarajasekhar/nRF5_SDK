@@ -243,11 +243,11 @@ static void ble_stack_init(struct os_eventq *app_evq)
     int rc;
     /* Set cputime to count at 1 usec increments */
     rc = cputime_init(APP_TASK_CPU_TIMER_PRIORITY);
-    ASSERT(rc == 0);
+    ASSERT(rc == OS_OK);
 
     /* Initialize the statistics package */
     rc = stats_module_init();
-    ASSERT(rc == 0);
+    ASSERT(rc == OS_OK);
 
     /* Initialize the BLE LL */
     rc = ble_ll_init(APP_TASK_LINK_PRIORITY, 7, 260);
@@ -255,7 +255,7 @@ static void ble_stack_init(struct os_eventq *app_evq)
 
     /* Initialize the BLE host. */
     rc = ble_hs_init(app_evq, NULL);
-    ASSERT(rc == 0);
+    ASSERT(rc == BLE_HS_ENONE);
 }
 
 /**@brief Function for the Device Manager initialization.

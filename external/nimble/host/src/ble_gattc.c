@@ -324,8 +324,8 @@ static struct os_mempool ble_gattc_proc_pool;
 static struct ble_gattc_proc_list ble_gattc_procs;
 
 /* Statistics. */
-STATS_SECT_DECL(ble_gattc_stats) ble_gattc_stats;
-STATS_NAME_START(ble_gattc_stats)
+struct stats_ble_gattc_stats STATS_VARIABLE(ble_gattc_stats);
+struct stats_name_map STATS_NAME_MAP_NAME(ble_gattc_stats)[] = {
     STATS_NAME(ble_gattc_stats, mtu)
     STATS_NAME(ble_gattc_stats, mtu_fail)
     STATS_NAME(ble_gattc_stats, disc_all_svcs)
@@ -361,7 +361,7 @@ STATS_NAME_START(ble_gattc_stats)
     STATS_NAME(ble_gattc_stats, indicate)
     STATS_NAME(ble_gattc_stats, indicate_fail)
     STATS_NAME(ble_gattc_stats, proc_timeout)
-STATS_NAME_END(ble_gattc_stats)
+};
 
 /*****************************************************************************
  * $debug                                                                    *
@@ -4595,12 +4595,12 @@ ble_gattc_init(void)
     rc = stats_init_and_reg(
         STATS_HDR(ble_gattc_stats), STATS_SIZE_INIT_PARMS(ble_gattc_stats,
         STATS_SIZE_32), STATS_NAME_INIT_PARMS(ble_gattc_stats), "ble_gattc");
-    if (rc != 0) {
+    if (rc != OS_OK) {
         rc = BLE_HS_EOS;
         goto err;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     if (ble_gattc_proc_mem) {

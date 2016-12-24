@@ -608,12 +608,12 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
     }
 
     rc = ble_gattc_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
     rc = ble_gatts_init();
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
@@ -623,7 +623,7 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
     rc = stats_init_and_reg(
         STATS_HDR(ble_hs_stats), STATS_SIZE_INIT_PARMS(ble_hs_stats,
         STATS_SIZE_32), STATS_NAME_INIT_PARMS(ble_hs_stats), "ble_hs");
-    if (rc != 0) {
+    if (rc != OS_OK) {
         rc = BLE_HS_EOS;
         goto err;
     }
@@ -634,18 +634,18 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
                          ble_hs_event_handle, NULL);
 
     rc = os_mutex_init(&ble_hs_mutex);
-    if (rc != 0) {
+    if (rc != OS_OK) {
         rc = BLE_HS_EOS;
         goto err;
     }
 #if BLE_HS_DEBUG
-    ble_hs_dbg_mutex_locked = 0;
+    ble_hs_dbg_mutex_locked = FALSE;
 #endif
 
     /* Configure the HCI transport to communicate with a host. */
     ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt, NULL, ble_hs_rx_data, NULL);
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     ble_hs_free_mem();

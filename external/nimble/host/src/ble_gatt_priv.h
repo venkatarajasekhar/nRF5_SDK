@@ -28,7 +28,8 @@ struct ble_att_find_info_idata;
 struct ble_att_read_group_type_adata;
 struct ble_att_prep_write_cmd;
 
-STATS_SECT_START(ble_gattc_stats)
+struct stats_ble_gattc_stats {
+    struct stats_hdr s_hdr;
     STATS_SECT_ENTRY(mtu)
     STATS_SECT_ENTRY(mtu_fail)
     STATS_SECT_ENTRY(disc_all_svcs)
@@ -64,10 +65,11 @@ STATS_SECT_START(ble_gattc_stats)
     STATS_SECT_ENTRY(indicate)
     STATS_SECT_ENTRY(indicate_fail)
     STATS_SECT_ENTRY(proc_timeout)
-STATS_SECT_END
-extern STATS_SECT_DECL(ble_gattc_stats) ble_gattc_stats;
+};
+extern struct stats_ble_gattc_stats STATS_VARIABLE(ble_gattc_stats);
 
-STATS_SECT_START(ble_gatts_stats)
+struct stats_ble_gatts_stats {
+    struct stats_hdr s_hdr;
     STATS_SECT_ENTRY(svcs)
     STATS_SECT_ENTRY(chrs)
     STATS_SECT_ENTRY(dscs)
@@ -78,8 +80,8 @@ STATS_SECT_START(ble_gatts_stats)
     STATS_SECT_ENTRY(chr_val_writes)
     STATS_SECT_ENTRY(dsc_reads)
     STATS_SECT_ENTRY(dsc_writes)
-STATS_SECT_END
-extern STATS_SECT_DECL(ble_gatts_stats) ble_gatts_stats;
+};
+extern struct stats_ble_gatts_stats STATS_VARIABLE(ble_gatts_stats);
 
 #define BLE_GATT_CHR_DECL_SZ_16     5
 #define BLE_GATT_CHR_DECL_SZ_128    19

@@ -2700,7 +2700,7 @@ ble_att_svr_init(void)
     }
 
     if (ble_hs_cfg.max_prep_entries > 0) {
-        ble_att_svr_prep_entry_mem = malloc(
+        ble_att_svr_prep_entry_mem = os_malloc(
             OS_MEMPOOL_BYTES(ble_hs_cfg.max_prep_entries,
                              sizeof (struct ble_att_prep_entry)));
         if (ble_att_svr_prep_entry_mem == NULL) {

@@ -750,7 +750,7 @@ ble_phy_init(void)
                                                       STATS_SIZE_32),
                                 STATS_NAME_INIT_PARMS(ble_phy_stats),
                                 "ble_phy");
-        assert(rc == 0);
+        assert(rc == OS_OK);
 
         g_ble_phy_data.phy_stats_initialized = 1;
     }

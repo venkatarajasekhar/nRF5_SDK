@@ -37,10 +37,10 @@ struct ble_gatts_svc_entry {
     uint16_t end_group_handle;  /* 0xffff means unset. */
 };
 
-static struct ble_gatts_svc_entry *ble_gatts_svc_entries;
+static struct ble_gatts_svc_entry *ble_gatts_svc_entries = NULL;
 static uint16_t ble_gatts_num_svc_entries;
 
-static os_membuf_t *ble_gatts_clt_cfg_mem;
+static os_membuf_t *ble_gatts_clt_cfg_mem = NULL;
 static struct os_mempool ble_gatts_clt_cfg_pool;
 
 struct ble_gatts_clt_cfg {
@@ -53,8 +53,8 @@ struct ble_gatts_clt_cfg {
 static struct ble_gatts_clt_cfg *ble_gatts_clt_cfgs;
 static int ble_gatts_num_cfgable_chrs;
 
-STATS_SECT_DECL(ble_gatts_stats) ble_gatts_stats;
-STATS_NAME_START(ble_gatts_stats)
+struct stats_ble_gatts_stats STATS_VARIABLE(ble_gatts_stats);
+struct stats_name_map STATS_NAME_MAP_NAME(ble_gatts_stats)[] = {
     STATS_NAME(ble_gatts_stats, svcs)
     STATS_NAME(ble_gatts_stats, chrs)
     STATS_NAME(ble_gatts_stats, dscs)
@@ -65,7 +65,7 @@ STATS_NAME_START(ble_gatts_stats)
     STATS_NAME(ble_gatts_stats, chr_val_writes)
     STATS_NAME(ble_gatts_stats, dsc_reads)
     STATS_NAME(ble_gatts_stats, dsc_writes)
-STATS_NAME_END(ble_gatts_stats)
+};
 
 static int
 ble_gatts_svc_access(uint16_t conn_handle, uint16_t attr_handle,
@@ -2028,11 +2028,15 @@ ble_gatts_free_svc_defs(void)
 static void
 ble_gatts_free_mem(void)
 {
-    free(ble_gatts_clt_cfg_mem);
-    ble_gatts_clt_cfg_mem = NULL;
-
-    free(ble_gatts_svc_entries);
-    ble_gatts_svc_entries = NULL;
+    if (ble_gatts_clt_cfg_mem) {
+        os_free(ble_gatts_clt_cfg_mem);
+        ble_gatts_clt_cfg_mem = NULL;
+    }
+    
+    if (ble_gatts_svc_entries) {
+        os_free(ble_gatts_svc_entries);
+        ble_gatts_svc_entries = NULL;
+    }
 }
 
 int
@@ -2057,7 +2061,7 @@ ble_gatts_init(void)
 
     if (ble_hs_cfg.max_services > 0) {
         ble_gatts_svc_entries =
-            malloc(ble_hs_cfg.max_services * sizeof *ble_gatts_svc_entries);
+            os_malloc(ble_hs_cfg.max_services * sizeof *ble_gatts_svc_entries);
         if (ble_gatts_svc_entries == NULL) {
             rc = BLE_HS_ENOMEM;
             goto err;
@@ -2069,7 +2073,7 @@ ble_gatts_init(void)
         rc = ble_gatts_register_svcs(ble_gatts_svc_defs[i],
                                      ble_hs_cfg.gatts_register_cb,
                                      ble_hs_cfg.gatts_register_arg);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             goto err;
         }
     }
@@ -2083,7 +2087,7 @@ ble_gatts_init(void)
         goto err;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 
 err:
     ble_gatts_free_mem();
