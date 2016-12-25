@@ -779,7 +779,7 @@ ble_gatts_register_chr(const struct ble_gatt_svc_def *svc,
     }
 
     if (ble_gatts_chr_clt_cfg_allowed(chr) != 0) {
-        if (ble_gatts_num_cfgable_chrs > ble_hs_cfg.max_client_configs) {
+        if (ble_gatts_num_cfgable_chrs > g_ble_hs_cfg.max_client_configs) {
             return BLE_HS_ENOMEM;
         }
         ble_gatts_num_cfgable_chrs++;
@@ -1020,7 +1020,7 @@ ble_gatts_register_svcs(const struct ble_gatt_svc_def *svcs,
 
     for (i = 0; svcs[i].type != BLE_GATT_SVC_TYPE_END; i++) {
         idx = ble_gatts_num_svc_entries + i;
-        if (idx >= ble_hs_cfg.max_services) {
+        if (idx >= g_ble_hs_cfg.max_services) {
             return BLE_HS_ENOMEM;
         }
 
@@ -1126,7 +1126,7 @@ ble_gatts_start(void)
     }
 
     /* Initialize client-configuration memory pool. */
-    num_elems = ble_hs_cfg.max_client_configs / ble_gatts_num_cfgable_chrs;
+    num_elems = g_ble_hs_cfg.max_client_configs / ble_gatts_num_cfgable_chrs;
     rc = os_mempool_init(&ble_gatts_clt_cfg_pool, num_elems,
                          ble_gatts_clt_cfg_size(), ble_gatts_clt_cfg_mem,
                          "ble_gatts_clt_cfg_pool");
@@ -2049,9 +2049,9 @@ ble_gatts_init(void)
     ble_gatts_num_cfgable_chrs = 0;
     ble_gatts_clt_cfgs = NULL;
 
-    if (ble_hs_cfg.max_client_configs > 0) {
+    if (g_ble_hs_cfg.max_client_configs > 0) {
         ble_gatts_clt_cfg_mem = malloc(
-            OS_MEMPOOL_BYTES(ble_hs_cfg.max_client_configs,
+            OS_MEMPOOL_BYTES(g_ble_hs_cfg.max_client_configs,
                              sizeof (struct ble_gatts_clt_cfg)));
         if (ble_gatts_clt_cfg_mem == NULL) {
             rc = BLE_HS_ENOMEM;
@@ -2059,9 +2059,9 @@ ble_gatts_init(void)
         }
     }
 
-    if (ble_hs_cfg.max_services > 0) {
+    if (g_ble_hs_cfg.max_services > 0) {
         ble_gatts_svc_entries =
-            os_malloc(ble_hs_cfg.max_services * sizeof *ble_gatts_svc_entries);
+            os_malloc(g_ble_hs_cfg.max_services * sizeof *ble_gatts_svc_entries);
         if (ble_gatts_svc_entries == NULL) {
             rc = BLE_HS_ENOMEM;
             goto err;
@@ -2071,8 +2071,8 @@ ble_gatts_init(void)
     ble_gatts_num_svc_entries = 0;
     for (i = 0; i < ble_gatts_num_svc_defs; i++) {
         rc = ble_gatts_register_svcs(ble_gatts_svc_defs[i],
-                                     ble_hs_cfg.gatts_register_cb,
-                                     ble_hs_cfg.gatts_register_arg);
+                                     g_ble_hs_cfg.gatts_register_cb,
+                                     g_ble_hs_cfg.gatts_register_arg);
         if (rc != BLE_HS_ENONE) {
             goto err;
         }

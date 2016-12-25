@@ -28,10 +28,10 @@ ble_store_read(int obj_type, union ble_store_key *key,
 {
     int rc;
 
-    if (ble_hs_cfg.store_read_cb == NULL) {
+    if (g_ble_hs_cfg.store_read_cb == NULL) {
         rc = BLE_HS_ENOTSUP;
     } else {
-        rc = ble_hs_cfg.store_read_cb(obj_type, key, val);
+        rc = g_ble_hs_cfg.store_read_cb(obj_type, key, val);
     }
 
     return rc;
@@ -42,10 +42,10 @@ ble_store_write(int obj_type, union ble_store_value *val)
 {
     int rc;
 
-    if (ble_hs_cfg.store_write_cb == NULL) {
+    if (g_ble_hs_cfg.store_write_cb == NULL) {
         rc = BLE_HS_ENOTSUP;
     } else {
-        rc = ble_hs_cfg.store_write_cb(obj_type, val);
+        rc = g_ble_hs_cfg.store_write_cb(obj_type, val);
     }
 
     return rc;
@@ -56,10 +56,10 @@ ble_store_delete(int obj_type, union ble_store_key *key)
 {
     int rc;
 
-    if (ble_hs_cfg.store_delete_cb == NULL) {
+    if (g_ble_hs_cfg.store_delete_cb == NULL) {
         rc = BLE_HS_ENOTSUP;
     } else {
-        rc = ble_hs_cfg.store_delete_cb(obj_type, key);
+        rc = g_ble_hs_cfg.store_delete_cb(obj_type, key);
     }
 
     return rc;

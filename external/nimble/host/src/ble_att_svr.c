@@ -2681,16 +2681,16 @@ ble_att_svr_init(void)
 
     ble_att_svr_free_mem();
 
-    if (ble_hs_cfg.max_attrs > 0) {
+    if (g_ble_hs_cfg.max_attrs > 0) {
         ble_att_svr_entry_mem = os_malloc(
-            OS_MEMPOOL_BYTES(ble_hs_cfg.max_attrs,
+            OS_MEMPOOL_BYTES(g_ble_hs_cfg.max_attrs,
                              sizeof (struct ble_att_svr_entry)));
         if (ble_att_svr_entry_mem == NULL) {
             rc = BLE_HS_ENOMEM;
             goto err;
         }
 
-        rc = os_mempool_init(&ble_att_svr_entry_pool, ble_hs_cfg.max_attrs,
+        rc = os_mempool_init(&ble_att_svr_entry_pool, g_ble_hs_cfg.max_attrs,
                              sizeof (struct ble_att_svr_entry),
                              ble_att_svr_entry_mem, "ble_att_svr_entry_pool");
         if (rc != OS_OK) {
@@ -2699,9 +2699,9 @@ ble_att_svr_init(void)
         }
     }
 
-    if (ble_hs_cfg.max_prep_entries > 0) {
+    if (g_ble_hs_cfg.max_prep_entries > 0) {
         ble_att_svr_prep_entry_mem = os_malloc(
-            OS_MEMPOOL_BYTES(ble_hs_cfg.max_prep_entries,
+            OS_MEMPOOL_BYTES(g_ble_hs_cfg.max_prep_entries,
                              sizeof (struct ble_att_prep_entry)));
         if (ble_att_svr_prep_entry_mem == NULL) {
             rc = BLE_HS_ENOMEM;
@@ -2709,7 +2709,7 @@ ble_att_svr_init(void)
         }
 
         rc = os_mempool_init(&ble_att_svr_prep_entry_pool,
-                             ble_hs_cfg.max_prep_entries,
+                             g_ble_hs_cfg.max_prep_entries,
                              sizeof (struct ble_att_prep_entry),
                              ble_att_svr_prep_entry_mem,
                              "ble_att_svr_prep_entry_pool");

@@ -99,8 +99,8 @@ ble_sm_test_util_init(void)
 {
     ble_hs_test_util_init();
     ble_hs_test_util_store_init(10, 10, 10);
-    ble_hs_cfg.store_read_cb = ble_sm_test_util_store_read;
-    ble_hs_cfg.store_write_cb = ble_sm_test_util_store_write;
+    g_ble_hs_cfg.store_read_cb = ble_sm_test_util_store_read;
+    g_ble_hs_cfg.store_write_cb = ble_sm_test_util_store_write;
 
     ble_sm_test_store_obj_type = -1;
     ble_sm_test_gap_event_type = -1;
@@ -206,23 +206,23 @@ ble_sm_test_util_init_good(struct ble_sm_test_params *params,
     ble_sm_test_util_params_to_entities(params, we_are_initiator,
                                         out_us, out_peer);
 
-    ble_hs_cfg.sm_io_cap = out_us->pair_cmd->io_cap;
-    ble_hs_cfg.sm_oob_data_flag = out_us->pair_cmd->oob_data_flag;
-    ble_hs_cfg.sm_bonding = !!(out_us->pair_cmd->authreq &
+    g_ble_hs_cfg.sm_io_cap = out_us->pair_cmd->io_cap;
+    g_ble_hs_cfg.sm_oob_data_flag = out_us->pair_cmd->oob_data_flag;
+    g_ble_hs_cfg.sm_bonding = !!(out_us->pair_cmd->authreq &
                                BLE_SM_PAIR_AUTHREQ_BOND);
-    ble_hs_cfg.sm_mitm = !!(out_us->pair_cmd->authreq &
+    g_ble_hs_cfg.sm_mitm = !!(out_us->pair_cmd->authreq &
                             BLE_SM_PAIR_AUTHREQ_MITM);
-    ble_hs_cfg.sm_sc = !!(out_us->pair_cmd->authreq &
+    g_ble_hs_cfg.sm_sc = !!(out_us->pair_cmd->authreq &
                           BLE_SM_PAIR_AUTHREQ_SC);
-    ble_hs_cfg.sm_keypress = !!(out_us->pair_cmd->authreq &
+    g_ble_hs_cfg.sm_keypress = !!(out_us->pair_cmd->authreq &
                                 BLE_SM_PAIR_AUTHREQ_KEYPRESS);
 
     if (we_are_initiator) {
-        ble_hs_cfg.sm_our_key_dist = out_us->pair_cmd->init_key_dist;
-        ble_hs_cfg.sm_their_key_dist = out_us->pair_cmd->resp_key_dist;
+        g_ble_hs_cfg.sm_our_key_dist = out_us->pair_cmd->init_key_dist;
+        g_ble_hs_cfg.sm_their_key_dist = out_us->pair_cmd->resp_key_dist;
     } else {
-        ble_hs_cfg.sm_our_key_dist = out_us->pair_cmd->resp_key_dist;
-        ble_hs_cfg.sm_their_key_dist = out_us->pair_cmd->init_key_dist;
+        g_ble_hs_cfg.sm_our_key_dist = out_us->pair_cmd->resp_key_dist;
+        g_ble_hs_cfg.sm_their_key_dist = out_us->pair_cmd->init_key_dist;
     }
 
     ble_hs_id_set_pub(out_us->id_addr);

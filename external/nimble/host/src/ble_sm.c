@@ -214,7 +214,7 @@ ble_sm_dbg_num_procs(void)
 
     cnt = 0;
     STAILQ_FOREACH(proc, &ble_sm_procs, next) {
-        BLE_HS_DBG_ASSERT(cnt < ble_hs_cfg.max_l2cap_sm_procs);
+        BLE_HS_DBG_ASSERT(cnt < g_ble_hs_cfg.max_l2cap_sm_procs);
         cnt++;
     }
 
@@ -684,10 +684,10 @@ ble_sm_rx_noop(uint16_t conn_handle, uint8_t op, struct os_mbuf **om,
 uint8_t
 ble_sm_build_authreq(void)
 {
-    return ble_hs_cfg.sm_bonding << 0  |
-           ble_hs_cfg.sm_mitm << 2     |
-           ble_hs_cfg.sm_sc << 3       |
-           ble_hs_cfg.sm_keypress << 4;
+    return g_ble_hs_cfg.sm_bonding << 0  |
+           g_ble_hs_cfg.sm_mitm << 2     |
+           g_ble_hs_cfg.sm_sc << 3       |
+           g_ble_hs_cfg.sm_keypress << 4;
 }
 
 static int
@@ -1412,22 +1412,22 @@ ble_sm_pair_exec(struct ble_sm_proc *proc, struct ble_sm_result *res,
 
     is_req = proc->flags & BLE_SM_PROC_F_INITIATOR;
 
-    cmd.io_cap = ble_hs_cfg.sm_io_cap;
-    cmd.oob_data_flag = ble_hs_cfg.sm_oob_data_flag;
+    cmd.io_cap = g_ble_hs_cfg.sm_io_cap;
+    cmd.oob_data_flag = g_ble_hs_cfg.sm_oob_data_flag;
     cmd.authreq = ble_sm_build_authreq();
     cmd.max_enc_key_size = 16;
 
     if (is_req) {
-        cmd.init_key_dist = ble_hs_cfg.sm_our_key_dist;
-        cmd.resp_key_dist = ble_hs_cfg.sm_their_key_dist;
+        cmd.init_key_dist = g_ble_hs_cfg.sm_our_key_dist;
+        cmd.resp_key_dist = g_ble_hs_cfg.sm_their_key_dist;
     } else {
         /* The response's key distribution flags field is the intersection of
          * the peer's preferences and our capabilities.
          */
         cmd.init_key_dist = proc->pair_req.init_key_dist &
-                            ble_hs_cfg.sm_their_key_dist;
+                            g_ble_hs_cfg.sm_their_key_dist;
         cmd.resp_key_dist = proc->pair_req.resp_key_dist &
-                            ble_hs_cfg.sm_our_key_dist;
+                            g_ble_hs_cfg.sm_our_key_dist;
     }
 
     rc = ble_sm_pair_cmd_tx(proc->conn_handle, is_req, &cmd);
@@ -2354,16 +2354,16 @@ ble_sm_init(void)
 
     INIT_LIST_HEAD(&ble_sm_procs.proc_hdr);
 
-    if (ble_hs_cfg.max_l2cap_sm_procs > 0) {
+    if (g_ble_hs_cfg.max_l2cap_sm_procs > 0) {
         ble_sm_proc_mem = os_malloc(
-            OS_MEMPOOL_BYTES(ble_hs_cfg.max_l2cap_sm_procs,
+            OS_MEMPOOL_BYTES(g_ble_hs_cfg.max_l2cap_sm_procs,
                              sizeof (struct ble_sm_proc)));
         if (ble_sm_proc_mem == NULL) {
             rc = BLE_HS_ENOMEM;
             goto err;
         }
         rc = os_mempool_init(&ble_sm_proc_pool,
-                             ble_hs_cfg.max_l2cap_sm_procs,
+                             g_ble_hs_cfg.max_l2cap_sm_procs,
                              sizeof (struct ble_sm_proc),
                              ble_sm_proc_mem,
                              "ble_sm_proc_pool");

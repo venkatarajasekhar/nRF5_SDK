@@ -237,8 +237,8 @@ ble_gatts_notify_test_misc_init(uint16_t *out_conn_handle, int bonding,
     ble_gatts_notify_test_num_events = 0;
 
     ble_hs_test_util_store_init(10, 10, 10);
-    ble_hs_cfg.store_read_cb = ble_hs_test_util_store_read;
-    ble_hs_cfg.store_write_cb = ble_hs_test_util_store_write;
+    g_ble_hs_cfg.store_read_cb = ble_hs_test_util_store_read;
+    g_ble_hs_cfg.store_write_cb = ble_hs_test_util_store_write;
 
     rc = ble_gatts_register_svcs(ble_gatts_notify_test_svcs,
                                  ble_gatts_notify_test_misc_reg_cb, NULL);

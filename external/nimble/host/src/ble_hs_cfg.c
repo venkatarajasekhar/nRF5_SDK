@@ -67,14 +67,14 @@ const struct ble_hs_cfg ble_hs_cfg_dflt = {
     .rpa_timeout = 300,
 };
 
-struct ble_hs_cfg ble_hs_cfg;
+struct ble_hs_cfg g_ble_hs_cfg;
 
 void
 ble_hs_cfg_init(struct ble_hs_cfg *cfg)
 {
     if (cfg == NULL) {
-        ble_hs_cfg = ble_hs_cfg_dflt;
+        g_ble_hs_cfg = ble_hs_cfg_dflt;
     } else {
-        ble_hs_cfg = *cfg;
+        g_ble_hs_cfg = *cfg;
     }
 }

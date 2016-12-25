@@ -304,14 +304,14 @@ ble_l2cap_init(void)
     ble_l2cap_free_mem();
 
     ble_l2cap_chan_mem = os_malloc(
-        OS_MEMPOOL_BYTES(ble_hs_cfg.max_l2cap_chans,
+        OS_MEMPOOL_BYTES(g_ble_hs_cfg.max_l2cap_chans,
                          sizeof (struct ble_l2cap_chan)));
     if (ble_l2cap_chan_mem == NULL) {
         rc = BLE_HS_ENOMEM;
         goto err;
     }
 
-    rc = os_mempool_init(&ble_l2cap_chan_pool, ble_hs_cfg.max_l2cap_chans,
+    rc = os_mempool_init(&ble_l2cap_chan_pool, g_ble_hs_cfg.max_l2cap_chans,
                          sizeof (struct ble_l2cap_chan),
                          ble_l2cap_chan_mem, "ble_l2cap_chan_pool");
     if (rc != OS_OK) {

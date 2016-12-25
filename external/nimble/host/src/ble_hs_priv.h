@@ -72,7 +72,7 @@ struct stats_ble_hs_stats {
 };
 extern struct stats_ble_hs_stats STATS_VARIABLE(ble_hs_stats);
 
-extern struct ble_hs_cfg ble_hs_cfg;
+extern struct ble_hs_cfg g_ble_hs_cfg;
 extern struct os_mbuf_pool ble_hs_mbuf_pool;
 extern uint8_t ble_hs_sync_state;
 

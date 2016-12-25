@@ -4573,9 +4573,9 @@ ble_gattc_init(void)
 
     INIT_LIST_HEAD(&ble_gattc_procs.proc_hdr);
 
-    if (ble_hs_cfg.max_gattc_procs > 0) {
+    if (g_ble_hs_cfg.max_gattc_procs > 0) {
         ble_gattc_proc_mem = os_malloc(
-            OS_MEMPOOL_BYTES(ble_hs_cfg.max_gattc_procs,
+            OS_MEMPOOL_BYTES(g_ble_hs_cfg.max_gattc_procs,
                              sizeof (struct ble_gattc_proc)));
         if (ble_gattc_proc_mem == NULL) {
             rc = BLE_HS_ENOMEM;
@@ -4583,7 +4583,7 @@ ble_gattc_init(void)
         }
 
         rc = os_mempool_init(&ble_gattc_proc_pool,
-                             ble_hs_cfg.max_gattc_procs,
+                             g_ble_hs_cfg.max_gattc_procs,
                              sizeof (struct ble_gattc_proc),
                              ble_gattc_proc_mem,
                              "ble_gattc_proc_pool");

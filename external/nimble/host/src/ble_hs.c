@@ -235,8 +235,8 @@ ble_hs_sync(void)
     rc = ble_hs_startup_go();
     if (rc == 0) {
         ble_hs_sync_state = BLE_HS_SYNC_STATE_GOOD;
-        if (ble_hs_cfg.sync_cb != NULL) {
-            ble_hs_cfg.sync_cb();
+        if (g_ble_hs_cfg.sync_cb != NULL) {
+            g_ble_hs_cfg.sync_cb();
         }
     } else {
         ble_hs_sync_state = BLE_HS_SYNC_STATE_BAD;
@@ -278,8 +278,8 @@ ble_hs_reset(void)
         ble_gap_conn_broken(conn_handle, ble_hs_reset_reason);
     }
 
-    if (ble_hs_cfg.reset_cb != NULL && ble_hs_reset_reason != 0) {
-        ble_hs_cfg.reset_cb(ble_hs_reset_reason);
+    if (g_ble_hs_cfg.reset_cb != NULL && ble_hs_reset_reason != 0) {
+        g_ble_hs_cfg.reset_cb(ble_hs_reset_reason);
     }
     ble_hs_reset_reason = 0;
 
@@ -558,14 +558,14 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
     ble_hs_cfg_init(cfg);
 
     ble_hs_hci_os_event_buf = os_malloc(
-        OS_MEMPOOL_BYTES(ble_hs_cfg.max_hci_bufs, sizeof (struct os_event)));
+        OS_MEMPOOL_BYTES(g_ble_hs_cfg.max_hci_bufs, sizeof (struct os_event)));
     if (ble_hs_hci_os_event_buf == NULL) {
         rc = BLE_HS_ENOMEM;
         goto err;
     }
 
     /* Create memory pool of OS events */
-    rc = os_mempool_init(&ble_hs_hci_ev_pool, ble_hs_cfg.max_hci_bufs,
+    rc = os_mempool_init(&ble_hs_hci_ev_pool, g_ble_hs_cfg.max_hci_bufs,
                          sizeof (struct os_event), ble_hs_hci_os_event_buf,
                          "ble_hs_hci_ev_pool");
     assert(rc == 0);

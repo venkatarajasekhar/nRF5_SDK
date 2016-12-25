@@ -135,7 +135,7 @@ ble_hs_pvcy_ensure_started(void)
     }
 
     /* Set up the periodic change of our RPA. */
-    rc = ble_hs_pvcy_set_addr_timeout(ble_hs_cfg.rpa_timeout);
+    rc = ble_hs_pvcy_set_addr_timeout(g_ble_hs_cfg.rpa_timeout);
     if (rc != 0) {
         return rc;
     }
