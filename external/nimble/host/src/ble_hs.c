@@ -568,7 +568,7 @@ ble_hs_init(struct os_eventq *app_evq, struct ble_hs_cfg *cfg)
     rc = os_mempool_init(&ble_hs_hci_ev_pool, g_ble_hs_cfg.max_hci_bufs,
                          sizeof (struct os_event), ble_hs_hci_os_event_buf,
                          "ble_hs_hci_ev_pool");
-    assert(rc == 0);
+    assert(rc == OS_OK);
 
     /* Initialize eventq */
     os_eventq_init(&ble_hs_evq);

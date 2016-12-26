@@ -29,10 +29,10 @@ _Static_assert(sizeof (struct ble_l2cap_hdr) == BLE_L2CAP_HDR_SZ,
 
 struct os_mempool ble_l2cap_chan_pool;
 
-static void *ble_l2cap_chan_mem;
+static void *ble_l2cap_chan_mem = NULL;
 
-STATS_SECT_DECL(ble_l2cap_stats) ble_l2cap_stats;
-STATS_NAME_START(ble_l2cap_stats)
+struct stats_ble_l2cap_stats STATS_VARIABLE(ble_l2cap_stats);
+struct stats_name_map STATS_NAME_MAP_NAME(ble_l2cap_stats)[] = {
     STATS_NAME(ble_l2cap_stats, chan_create)
     STATS_NAME(ble_l2cap_stats, chan_delete)
     STATS_NAME(ble_l2cap_stats, update_init)
@@ -43,7 +43,7 @@ STATS_NAME_START(ble_l2cap_stats)
     STATS_NAME(ble_l2cap_stats, sig_rx)
     STATS_NAME(ble_l2cap_stats, sm_tx)
     STATS_NAME(ble_l2cap_stats, sm_rx)
-STATS_NAME_END(ble_l2cap_stats)
+};
 
 struct ble_l2cap_chan *
 ble_l2cap_chan_alloc(void)

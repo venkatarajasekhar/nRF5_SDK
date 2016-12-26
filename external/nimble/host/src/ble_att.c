@@ -65,8 +65,8 @@ static const struct ble_att_rx_dispatch_entry ble_att_rx_dispatch[] = {
 #define BLE_ATT_RX_DISPATCH_SZ \
     (sizeof ble_att_rx_dispatch / sizeof ble_att_rx_dispatch[0])
 
-STATS_SECT_DECL(ble_att_stats) ble_att_stats;
-STATS_NAME_START(ble_att_stats)
+struct stats_ble_att_stats STATS_VARIABLE(ble_att_stats);
+struct stats_name_map STATS_NAME_MAP_NAME(ble_att_stats)[] = {
     STATS_NAME(ble_att_stats, error_rsp_rx)
     STATS_NAME(ble_att_stats, error_rsp_tx)
     STATS_NAME(ble_att_stats, mtu_req_rx)
@@ -121,7 +121,7 @@ STATS_NAME_START(ble_att_stats)
     STATS_NAME(ble_att_stats, indicate_rsp_tx)
     STATS_NAME(ble_att_stats, write_cmd_rx)
     STATS_NAME(ble_att_stats, write_cmd_tx)
-STATS_NAME_END(ble_att_stats)
+};
 
 static const struct ble_att_rx_dispatch_entry *
 ble_att_rx_dispatch_entry_find(uint8_t op)

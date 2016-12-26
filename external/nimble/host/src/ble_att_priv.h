@@ -42,7 +42,8 @@ struct ble_att_exec_write_req;
 struct ble_att_notify_req;
 struct ble_att_indicate_req;
 
-STATS_SECT_START(ble_att_stats)
+struct stats_ble_att_stats {
+    struct stats_hdr s_hdr;
     STATS_SECT_ENTRY(error_rsp_rx)
     STATS_SECT_ENTRY(error_rsp_tx)
     STATS_SECT_ENTRY(mtu_req_rx)
@@ -97,8 +98,8 @@ STATS_SECT_START(ble_att_stats)
     STATS_SECT_ENTRY(indicate_rsp_tx)
     STATS_SECT_ENTRY(write_cmd_rx)
     STATS_SECT_ENTRY(write_cmd_tx)
-STATS_SECT_END
-extern STATS_SECT_DECL(ble_att_stats) ble_att_stats;
+};
+extern struct stats_ble_att_stats STATS_VARIABLE(ble_att_stats);
 
 struct ble_att_prep_entry {
     SLIST_ENTRY(ble_att_prep_entry) bape_next;

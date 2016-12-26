@@ -29,7 +29,7 @@
 static struct list_head ble_hs_conns;
 static struct os_mempool ble_hs_conn_pool;
 
-static os_membuf_t *ble_hs_conn_elem_mem;
+static os_membuf_t *ble_hs_conn_elem_mem = NULL;
 
 static const uint8_t ble_hs_conn_null_addr[6];
 
