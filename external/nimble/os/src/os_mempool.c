@@ -92,8 +92,8 @@ os_mempool_init(struct os_mempool *mp, int blocks, int block_size,
  * @param mp                    The mempool to check as parent.
  * @param block_addr            The memory block to check as child.
  *
- * @return                      0 if the block does not belong to the mempool;
- *                              1 if the block does belong to the mempool.
+ * @return                      FALSE if the block does not belong to the mempool;
+ *                              TRUE if the block does belong to the mempool.
  */
 int
 os_memblock_from(struct os_mempool *mp, void *block_addr)
@@ -110,15 +110,15 @@ os_memblock_from(struct os_mempool *mp, void *block_addr)
 
     /* Check that the block is in the memory buffer range. */
     if ((baddr32 < mp->mp_membuf_addr) || (baddr32 >= end)) {
-        return 0;
+        return FALSE;
     }
 
     /* All freed blocks should be on true block size boundaries! */
     if (((baddr32 - mp->mp_membuf_addr) % true_block_size) != 0) {
-        return 0;
+        return FALSE;
     }
 
-    return 1;
+    return TRUE;
 }
 
 /**

@@ -103,9 +103,9 @@ struct os_timezone {
                 }                                                       \
         } while (0)
 
-int os_settimeofday(struct os_timeval *utctime, struct os_timezone *tz);
-int os_gettimeofday(struct os_timeval *utctime, struct os_timezone *tz);
+os_error_t os_settimeofday(struct os_timeval *utctime, struct os_timezone *tz);
+os_error_t os_gettimeofday(struct os_timeval *utctime, struct os_timezone *tz);
 int64_t os_get_uptime_usec(void);
-int os_time_ms_to_ticks(uint32_t ms, uint32_t *out_ticks);
+os_error_t os_time_ms_to_ticks(uint32_t ms, uint32_t *out_ticks);
 
 #endif /* _OS_TIME_H */

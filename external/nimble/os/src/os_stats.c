@@ -38,7 +38,7 @@ struct stats_name_map STATS_NAME_MAP_NAME(os_stats)[] = {
 
 struct list_head stats_registry = LIST_HEAD_INIT(stats_registry);
 
-static uint8_t stats_module_inited;
+static uint8_t stats_module_inited = FALSE;
 
 os_error_t
 stats_walk(struct stats_hdr *hdr, stats_walk_func_t walk_func, void *arg)
@@ -140,7 +140,7 @@ err:
 void
 stats_module_reset(void)
 {
-    stats_module_inited = 0;
+    stats_module_inited = FALSE;
 
     INIT_LIST_HEAD(&stats_registry);
 }

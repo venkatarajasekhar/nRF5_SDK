@@ -90,7 +90,7 @@ os_callout_stop(struct os_callout *c)
  *
  * @return 0 on success, non-zero on failure
  */
-int
+os_error_t
 os_callout_reset(struct os_callout *c, int32_t ticks)
 {
     struct os_callout *entry;
@@ -122,7 +122,7 @@ os_callout_reset(struct os_callout *c, int32_t ticks)
 
     OS_EXIT_CRITICAL(sr);
 
-    return (0);
+    return (OS_OK);
 err:
     return (rc);
 }
@@ -142,7 +142,7 @@ os_callout_tick(void)
 
     now = os_time_get();
 
-    while (1) {
+    while (TRUE) {
         OS_ENTER_CRITICAL(sr);
         c = list_empty(&g_callout_list) ? NULL
             : list_first_entry(&g_callout_list, struct os_callout, c_node);

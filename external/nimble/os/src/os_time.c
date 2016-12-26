@@ -23,8 +23,6 @@
 #include "os/os.h"
 #include "os/queue.h"
 
-CTASSERT(sizeof(os_time_t) == 4);
-
 #define OS_USEC_PER_TICK    (1000000 / OS_TICKS_PER_SEC)
 
 os_time_t g_os_time = 0;
@@ -123,7 +121,7 @@ os_time_delay(int32_t osticks)
  *
  * @return 0 on success, non-zero on failure.
  */
-int
+os_error_t
 os_settimeofday(struct os_timeval *utctime, struct os_timezone *tz)
 {
     os_sr_t sr;
@@ -145,7 +143,7 @@ os_settimeofday(struct os_timeval *utctime, struct os_timezone *tz)
     }
     OS_EXIT_CRITICAL(sr);
 
-    return (0);
+    return (OS_OK);
 }
 
 /**
@@ -158,7 +156,7 @@ os_settimeofday(struct os_timeval *utctime, struct os_timezone *tz)
  *
  * @return 0 on success, non-zero on failure
  */
-int
+os_error_t
 os_gettimeofday(struct os_timeval *tv, struct os_timezone *tz)
 {
     os_sr_t sr;
@@ -175,7 +173,7 @@ os_gettimeofday(struct os_timeval *tv, struct os_timezone *tz)
     }
     OS_EXIT_CRITICAL(sr);
 
-    return (0);
+    return (OS_OK);
 }
 
 /**
@@ -200,7 +198,7 @@ os_get_uptime_usec(void)
 
   os_deltatime(delta, &tv, &tv);
 
-  return(tv.tv_sec * 1000000 + tv.tv_usec);
+  return (tv.tv_sec * 1000000 + tv.tv_usec);
 }
 
 /**
@@ -212,14 +210,14 @@ os_get_uptime_usec(void)
  * @return                      0 on success; OS_EINVAL if the result is too
  *                                  large to fit in a uint32_t.
  */
-int
+os_error_t
 os_time_ms_to_ticks(uint32_t ms, uint32_t *out_ticks)
 {
     uint64_t ticks;
 
 #if OS_TICKS_PER_SEC == 1000
     *out_ticks = ms;
-    return 0;
+    return OS_OK;
 #endif
 
     _Static_assert(OS_TICKS_PER_SEC <= UINT32_MAX,
@@ -231,5 +229,5 @@ os_time_ms_to_ticks(uint32_t ms, uint32_t *out_ticks)
     }
 
     *out_ticks = ticks;
-    return 0;
+    return OS_OK;
 }
