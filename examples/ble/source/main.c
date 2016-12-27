@@ -123,6 +123,7 @@ static void ble_stack_thread(void * arg)
 {
     bool             erase_bonds;
 	struct os_eventq stack_evq;
+    struct os_event* stack_evt;
 
     UNUSED_PARAMETER(arg);
 
@@ -139,9 +140,13 @@ static void ble_stack_thread(void * arg)
     application_timers_start();
     advertising_start();
 
-    while (1)
+    while (TRUE)
     {
-        vTaskDelay(1000);
+        stack_evt = os_eventq_get(&stack_evq);
+        switch (stack_evt->ev_type) {
+            default:
+                break;
+        }
     }
 }
 
