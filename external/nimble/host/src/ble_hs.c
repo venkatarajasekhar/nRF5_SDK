@@ -30,7 +30,7 @@
  * The maximum number of events the host will process in a row before returning
  * control to the parent task.
  */
-#define BLE_HS_MAX_EVS_IN_A_ROW 2
+#define BLE_HS_MAX_EVS_IN_A_ROW         (2)
 
 struct os_mempool ble_hs_hci_ev_pool;
 static void *ble_hs_hci_os_event_buf = NULL;
@@ -47,14 +47,14 @@ static struct os_event ble_hs_event_reset = {
     .ev_arg = NULL,
 };
 
-uint8_t ble_hs_sync_state;
+uint8_t ble_hs_sync_state = FALSE;
 static int ble_hs_reset_reason;
 
 #if MYNEWT_SELFTEST
 /** Use a higher frequency timer to allow tests to run faster. */
 #define BLE_HS_HEARTBEAT_OS_TICKS       (OS_TICKS_PER_SEC / 10)
 #else
-#define BLE_HS_HEARTBEAT_OS_TICKS       OS_TICKS_PER_SEC
+#define BLE_HS_HEARTBEAT_OS_TICKS       (OS_TICKS_PER_SEC)
 #endif
 
 #define BLE_HS_SYNC_RETRY_RATE          (OS_TICKS_PER_SEC / 10)    
@@ -125,7 +125,7 @@ ble_hs_lock(void)
 
 #if BLE_HS_DEBUG
     if (!os_started()) {
-        ble_hs_dbg_mutex_locked = 1;
+        ble_hs_dbg_mutex_locked = TRUE;
         return;
     }
 #endif
@@ -142,13 +142,13 @@ ble_hs_unlock(void)
 #if BLE_HS_DEBUG
     if (!os_started()) {
         BLE_HS_DBG_ASSERT(ble_hs_dbg_mutex_locked);
-        ble_hs_dbg_mutex_locked = 0;
+        ble_hs_dbg_mutex_locked = FALSE;
         return;
     }
 #endif
 
     rc = os_mutex_release(&ble_hs_mutex);
-    BLE_HS_DBG_ASSERT_EVAL(rc == 0 || rc == OS_NOT_STARTED);
+    BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK || rc == OS_NOT_STARTED);
 }
 
 void
@@ -188,7 +188,7 @@ ble_hs_heartbeat_timer_reset(uint32_t ticks)
     int rc;
 
     rc = os_callout_reset(&ble_hs_heartbeat_timer.cf_c, ticks);
-    BLE_HS_DBG_ASSERT_EVAL(rc == 0);
+    BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK);
 }
 
 void
@@ -233,7 +233,7 @@ ble_hs_sync(void)
     ble_hs_sync_state = BLE_HS_SYNC_STATE_BRINGUP;
 
     rc = ble_hs_startup_go();
-    if (rc == 0) {
+    if (rc == BLE_HS_ENONE) {
         ble_hs_sync_state = BLE_HS_SYNC_STATE_GOOD;
         if (g_ble_hs_cfg.sync_cb != NULL) {
             g_ble_hs_cfg.sync_cb();
@@ -244,7 +244,7 @@ ble_hs_sync(void)
 
     ble_hs_heartbeat_sched(BLE_HS_SYNC_RETRY_RATE);
 
-    if (rc == 0) {
+    if (rc == BLE_HS_ENONE) {
         STATS_INC(ble_hs_stats, sync);
     }
 
@@ -259,17 +259,17 @@ ble_hs_reset(void)
 
     STATS_INC(ble_hs_stats, reset);
 
-    ble_hs_sync_state = 0;
+    ble_hs_sync_state = FALSE;
 
     rc = ble_hci_trans_reset();
-    if (rc != 0) {
+    if (rc != BLE_ERR_SUCCESS) {
         return rc;
     }
 
     ble_hs_clear_data_queue(&ble_hs_tx_q);
     ble_hs_clear_data_queue(&ble_hs_rx_q);
 
-    while (1) {
+    while (TRUE) {
         conn_handle = ble_hs_atomic_first_conn_handle();
         if (conn_handle == BLE_HS_CONN_HANDLE_NONE) {
             break;
@@ -278,13 +278,12 @@ ble_hs_reset(void)
         ble_gap_conn_broken(conn_handle, ble_hs_reset_reason);
     }
 
-    if (g_ble_hs_cfg.reset_cb != NULL && ble_hs_reset_reason != 0) {
+    if (g_ble_hs_cfg.reset_cb != NULL && ble_hs_reset_reason != BLE_HS_ENONE) {
         g_ble_hs_cfg.reset_cb(ble_hs_reset_reason);
     }
-    ble_hs_reset_reason = 0;
+    ble_hs_reset_reason = BLE_HS_ENONE;
 
-    rc = ble_hs_sync();
-    return rc;
+    return ble_hs_sync();
 }
 
 /**
@@ -325,27 +324,21 @@ static void
 ble_hs_event_handle(void *unused)
 {
     struct os_callout_func *cf;
-    struct os_eventq *evqp;
     struct os_event *ev;
     uint8_t *hci_evt;
-    int rc;
-    int i;
+    int rc, i = 0;
 
-    evqp = &ble_hs_evq;
-
-    i = 0;
-    while (1) {
+    while (TRUE) {
         /* If the host has already processed several consecutive events, stop
          * and return control to the parent task.  Put an event on the parent
          * task's eventq to indicate that more host events are enqueued.
          */
-        if (i >= BLE_HS_MAX_EVS_IN_A_ROW) {
+        if (i++ >= BLE_HS_MAX_EVS_IN_A_ROW) {
             os_eventq_put(ble_hs_parent_evq, &ble_hs_event_co.cf_c.c_ev);
             break;
         }
-        i++;
 
-        ev = os_eventq_get(evqp);
+        ev = os_eventq_get(&ble_hs_evq);
         if (ev == NULL) {
             break;
         }
@@ -360,7 +353,7 @@ ble_hs_event_handle(void *unused)
         case BLE_HOST_HCI_EVENT_CTLR_EVENT:
             hci_evt = ev->ev_arg;
             rc = os_memblock_put(&ble_hs_hci_ev_pool, ev);
-            BLE_HS_DBG_ASSERT_EVAL(rc == 0);
+            BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK);
 
             ble_hs_hci_evt_process(hci_evt);
             break;
@@ -403,7 +396,7 @@ ble_hs_enqueue_hci_event(uint8_t *hci_evt)
     if (ev == NULL) {
         ble_hci_trans_buf_free(hci_evt);
     } else {
-        ev->ev_queued = 0;
+        ev->ev_queued = FALSE;
         ev->ev_type = BLE_HOST_HCI_EVENT_CTLR_EVENT;
         ev->ev_arg = hci_evt;
         ble_hs_event_enqueue(ev);
@@ -430,7 +423,7 @@ ble_hs_notifications_sched(void)
 void
 ble_hs_sched_reset(int reason)
 {
-    BLE_HS_DBG_ASSERT(ble_hs_reset_reason == 0);
+    BLE_HS_DBG_ASSERT(ble_hs_reset_reason == BLE_HS_ENONE);
 
     ble_hs_reset_reason = reason;
     ble_hs_event_enqueue(&ble_hs_event_reset);
@@ -458,14 +451,11 @@ ble_hs_hw_error(uint8_t hw_code)
 int
 ble_hs_start(void)
 {
-    int rc;
-
     os_sched_get_current_task(&ble_hs_parent_task);
 
     ble_gatts_start();
 
-    rc = ble_hs_sync();
-    return rc;
+    return ble_hs_sync();
 }
 
 /**
@@ -483,13 +473,13 @@ ble_hs_rx_data(struct os_mbuf *om, void *arg)
     int rc;
 
     rc = os_mqueue_put(&ble_hs_rx_q, &ble_hs_evq, om);
-    if (rc == 0) {
+    if (rc == OS_OK) {
         os_eventq_put(ble_hs_parent_evq, &ble_hs_event_co.cf_c.c_ev);
+        return BLE_HS_ENONE;
     } else {
         os_mbuf_free_chain(om);
         rc = BLE_HS_EOS;
     }
-    return rc;
 }
 
 /**
@@ -507,13 +497,13 @@ ble_hs_tx_data(struct os_mbuf *om)
     int rc;
 
     rc = os_mqueue_put(&ble_hs_tx_q, &ble_hs_evq, om);
-    if (rc != 0) {
+    if (rc == OS_OK) {
+        os_eventq_put(ble_hs_parent_evq, &ble_hs_event_co.cf_c.c_ev);
+        return BLE_HS_ENONE;
+    } else {
         os_mbuf_free_chain(om);
         return BLE_HS_EOS;
     }
-    os_eventq_put(ble_hs_parent_evq, &ble_hs_event_co.cf_c.c_ev);
-
-    return 0;
 }
 
 static void

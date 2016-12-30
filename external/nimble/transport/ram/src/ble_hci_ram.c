@@ -176,7 +176,7 @@ ble_hci_trans_reset(void)
     /* No work to do.  All allocated buffers are owned by the host or
      * controller, and they will get freed by their owners.
      */
-    return 0;
+    return BLE_ERR_SUCCESS;
 }
 
 /**

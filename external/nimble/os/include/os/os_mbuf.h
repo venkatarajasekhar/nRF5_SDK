@@ -67,7 +67,7 @@ struct os_mbuf_pkthdr {
     /**
      * Next packet in the mbuf chain.
      */
-    struct list_head omp_next;
+    struct list_head omp_node;
 };
 
 /**
@@ -108,7 +108,7 @@ struct os_mbuf {
 };
 
 struct os_mqueue {
-    struct list_head mq_head;
+    struct list_head mq_hdr;
     struct os_event mq_ev;
 };
 
@@ -129,7 +129,7 @@ struct os_mqueue {
 
 /* Get a packet header pointer given an mbuf pointer */
 #define OS_MBUF_PKTHDR(__om) ((struct os_mbuf_pkthdr *)     \
-    ((uint8_t *)(__om) + sizeof(struct os_mbuf)))
+    ((uint8_t *)(__om) + sizeof(struct os_mbuf))
 
 /* Given a mbuf packet header pointer, return a pointer to the mbuf */
 #define OS_MBUF_PKTHDR_TO_MBUF(__hdr)   \
@@ -225,13 +225,13 @@ _os_mbuf_trailingspace(struct os_mbuf *om)
 /* Mbuf queue functions */
 
 /* Initialize a mbuf queue */
-int os_mqueue_init(struct os_mqueue *, void *arg);
+os_error_t os_mqueue_init(struct os_mqueue *, void *arg);
 
 /* Get an element from a mbuf queue */
 struct os_mbuf *os_mqueue_get(struct os_mqueue *);
 
 /* Put an element in a mbuf queue */
-int os_mqueue_put(struct os_mqueue *, struct os_eventq *, struct os_mbuf *);
+os_error_t os_mqueue_put(struct os_mqueue *, struct os_eventq *, struct os_mbuf *);
 
 /* Register an mbuf pool with the system pool registry */
 int os_msys_register(struct os_mbuf_pool *);

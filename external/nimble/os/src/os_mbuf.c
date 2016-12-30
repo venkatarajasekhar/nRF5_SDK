@@ -56,19 +56,19 @@ struct list_head g_msys_pool_list = LIST_HEAD_INIT(g_msys_pool_list);
  * @return 0 on success, non-zero on failure.
  *
  */
-int
+os_error_t
 os_mqueue_init(struct os_mqueue *mq, void *arg)
 {
     struct os_event *ev;
 
-    INIT_LIST_HEAD(&mq->mq_head);
+    INIT_LIST_HEAD(&mq->mq_hdr);
 
     ev = &mq->mq_ev;
     memset(ev, 0, sizeof(*ev));
     ev->ev_arg = arg;
     ev->ev_type = OS_EVENT_T_MQUEUE_DATA;
 
-    return (0);
+    return (OS_OK);
 }
 
 /**
@@ -87,8 +87,10 @@ os_mqueue_get(struct os_mqueue *mq)
 
     OS_ENTER_CRITICAL(sr);
     if (!list_empty(&mq->mq_head)) {
-        mp = list_first_entry(&mq->mq_head, os_mbuf_pkthdr, omp_next);
+        mp = list_first_entry(&mq->mq_head, os_mbuf_pkthdr, omp_node);
         list_del(&mp->omp_next);
+    } else {
+        mp = NULL;
     }
     OS_EXIT_CRITICAL(sr);
 
@@ -111,7 +113,7 @@ os_mqueue_get(struct os_mqueue *mq)
  *
  * @return 0 on success, non-zero on failure.
  */
-int
+os_error_t;
 os_mqueue_put(struct os_mqueue *mq, struct os_eventq *evq, struct os_mbuf *m)
 {
     struct os_mbuf_pkthdr *mp;
@@ -127,7 +129,7 @@ os_mqueue_put(struct os_mqueue *mq, struct os_eventq *evq, struct os_mbuf *m)
     mp = OS_MBUF_PKTHDR(m);
 
     OS_ENTER_CRITICAL(sr);
-    list_add_tail(&mp->omp_next, &mq->mq_head);
+    list_add_tail(&mp->omp_node, &mq->mq_hdr);
     OS_EXIT_CRITICAL(sr);
 
     /* Only post an event to the queue if its specified */
@@ -135,7 +137,7 @@ os_mqueue_put(struct os_mqueue *mq, struct os_eventq *evq, struct os_mbuf *m)
         os_eventq_put(evq, &mq->mq_ev);
     }
 
-    return (0);
+    return (OS_OK);
 err:
     return (rc);
 }
