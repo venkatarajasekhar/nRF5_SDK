@@ -366,7 +366,7 @@ os_mbuf_free(struct os_mbuf *om)
     if (om->om_omp != NULL) {
         list_del(&om->om_node);
         rc = os_memblock_put(om->om_omp->omp_pool, om);
-        if (rc != 0) {
+        if (rc != OS_OK) {
             goto err;
         }
     }

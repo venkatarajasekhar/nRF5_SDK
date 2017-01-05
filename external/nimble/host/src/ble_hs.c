@@ -113,7 +113,8 @@ ble_hs_locked_by_cur_task(void)
 int
 ble_hs_is_parent_task(void)
 {
-    return !os_started() || os_sched_check_current_task(&ble_hs_parent_task);
+    return (!os_started() ||
+        os_sched_check_current_task(&ble_hs_parent_task));
 }
 
 void
@@ -218,7 +219,7 @@ ble_hs_heartbeat_sched(int32_t ticks_from_now)
 int
 ble_hs_synced(void)
 {
-    return ble_hs_sync_state == BLE_HS_SYNC_STATE_GOOD;
+    return (ble_hs_sync_state == BLE_HS_SYNC_STATE_GOOD);
 }
 
 static int
@@ -374,7 +375,7 @@ ble_hs_event_handle(void *unused)
             break;
 
         default:
-            BLE_HS_DBG_ASSERT(0);
+            BLE_HS_DBG_ASSERT(FALSE);
             break;
         }
     }
@@ -470,15 +471,12 @@ ble_hs_start(void)
 int
 ble_hs_rx_data(struct os_mbuf *om, void *arg)
 {
-    int rc;
-
-    rc = os_mqueue_put(&ble_hs_rx_q, &ble_hs_evq, om);
-    if (rc == OS_OK) {
+    if (OS_OK == os_mqueue_put(&ble_hs_rx_q, &ble_hs_evq, om)) {
         os_eventq_put(ble_hs_parent_evq, &ble_hs_event_co.cf_c.c_ev);
         return BLE_HS_ENONE;
     } else {
         os_mbuf_free_chain(om);
-        rc = BLE_HS_EOS;
+        return BLE_HS_EOS;
     }
 }
 
@@ -494,10 +492,7 @@ ble_hs_rx_data(struct os_mbuf *om, void *arg)
 int
 ble_hs_tx_data(struct os_mbuf *om)
 {
-    int rc;
-
-    rc = os_mqueue_put(&ble_hs_tx_q, &ble_hs_evq, om);
-    if (rc == OS_OK) {
+    if (OS_OK == os_mqueue_put(&ble_hs_tx_q, &ble_hs_evq, om)) {
         os_eventq_put(ble_hs_parent_evq, &ble_hs_event_co.cf_c.c_ev);
         return BLE_HS_ENONE;
     } else {

@@ -463,7 +463,7 @@ ble_hs_hci_acl_tx(struct ble_hs_conn *connection, struct os_mbuf *txom)
     /* Send fragments until the entire packet has been sent. */
     while (txom != NULL) {
         rc = ble_hs_hci_split_frag(&txom, &frag);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             goto err;
         }
 
