@@ -86,11 +86,11 @@ os_mqueue_get(struct os_mqueue *mq)
     os_sr_t sr;
 
     OS_ENTER_CRITICAL(sr);
-    if (!list_empty(&mq->mq_head)) {
-        mp = list_first_entry(&mq->mq_head, os_mbuf_pkthdr, omp_node);
-        list_del(&mp->omp_next);
-    } else {
+    if (list_empty(&mq->mq_head)) {
         mp = NULL;
+    } else {
+        mp = list_first_entry(&mq->mq_hdr, os_mbuf_pkthdr, omp_node);
+        list_del(&mp->omp_next);
     }
     OS_EXIT_CRITICAL(sr);
 
@@ -356,9 +356,9 @@ os_mbuf_get_pkthdr(struct os_mbuf_pool *omp, uint8_t user_pkthdr_len)
  * @param omp The Mbuf pool to release back to
  * @param om  The Mbuf to release back to the pool
  *
- * @return 0 on success, -1 on failure
+ * @return os_error_t
  */
-int
+os_error_t
 os_mbuf_free(struct os_mbuf *om)
 {
     int rc;
@@ -382,15 +382,15 @@ err:
  * @param omp The mbuf pool to free the chain of mbufs into
  * @param om  The starting mbuf of the chain to free back into the pool
  *
- * @return 0 on success, -1 on failure
+ * @return os_error_t
  */
-int
+os_error_t
 os_mbuf_free_chain(struct os_mbuf *om)
 {
     struct os_mbuf *next, *tmp;
     int rc;
 
-    if (NULL == om) {
+    if (NULL == om || NULL == om->om_node.next) {
         return OS_OK;
     }
 
@@ -413,9 +413,9 @@ err:
  * @param omp The mbuf pool to free the chain of mbufs into
  * @param om  The starting mbuf of the chain to free back into the pool
  *
- * @return 0 on success, -1 on failure
+ * @return os_error_t
  */
-static int
+static os_error_t
 _os_mbuf_free_empty(struct os_mbuf *om)
 {
     struct os_mbuf *next, *tmp;
@@ -958,7 +958,7 @@ os_mbuf_prepend(struct os_mbuf *om, int len)
         return NULL;
     }
 
-    while (1) {
+    while (TRUE) {
         /* Fill the available space at the front of the head of the chain, as
          * needed.
          */

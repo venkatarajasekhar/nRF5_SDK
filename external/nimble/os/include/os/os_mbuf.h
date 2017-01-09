@@ -272,10 +272,10 @@ int os_mbuf_appendfrom(struct os_mbuf *dst, const struct os_mbuf *src,
                        uint16_t src_off, uint16_t len);
 
 /* Free a mbuf */
-int os_mbuf_free(struct os_mbuf *mb);
+os_error_t os_mbuf_free(struct os_mbuf *mb);
 
 /* Free a mbuf chain */
-int os_mbuf_free_chain(struct os_mbuf *om);
+os_error_t os_mbuf_free_chain(struct os_mbuf *om);
 
 void os_mbuf_adj(struct os_mbuf *mp, int req_len);
 int os_mbuf_cmpf(const struct os_mbuf *om, int off, const void *data,

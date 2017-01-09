@@ -25,14 +25,14 @@
 #include "ble_hs_priv.h"
 #include "ble_hs_dbg_priv.h"
 
-#define BLE_HCI_CMD_TIMEOUT     (OS_TICKS_PER_SEC)
+#define BLE_HCI_CMD_TIMEOUT             (OS_TICKS_PER_SEC)
 
 static struct os_mutex ble_hs_hci_mutex;
 static struct os_sem ble_hs_hci_sem;
 
-static uint8_t *ble_hs_hci_ack;
+static uint8_t *ble_hs_hci_ack_evt = NULL;
 static uint16_t ble_hs_hci_buf_sz;
-static uint8_t ble_hs_hci_max_pkts;
+static uint8_t  ble_hs_hci_max_pkts;
 
 #if PHONY_HCI_ACKS
 static ble_hs_hci_phony_ack_fn *ble_hs_hci_phony_ack_cb;
@@ -103,7 +103,7 @@ ble_hs_hci_rx_cmd_complete(uint8_t event_code, uint8_t *data, int len,
     if (params_len > 0) {
         out_ack->bha_status = BLE_HS_HCI_ERR(params[0]);
     } else if (opcode == BLE_HCI_OPCODE_NOP) {
-        out_ack->bha_status = 0;
+        out_ack->bha_status = BLE_HS_ENONE;
     } else {
         out_ack->bha_status = BLE_HS_ECONTROLLER;
     }
@@ -157,16 +157,16 @@ ble_hs_hci_process_ack(uint16_t expected_opcode,
     uint8_t event_len;
     int rc;
 
-    BLE_HS_DBG_ASSERT(ble_hs_hci_ack != NULL);
+    BLE_HS_DBG_ASSERT(ble_hs_hci_ack_evt != NULL);
 
     /* Count events received */
     STATS_INC(ble_hs_stats, hci_event);
 
     /* Display to console */
-    ble_hs_dbg_event_disp(ble_hs_hci_ack);
+    ble_hs_dbg_event_disp(ble_hs_hci_ack_evt);
 
-    event_code = ble_hs_hci_ack[0];
-    param_len = ble_hs_hci_ack[1];
+    event_code = ble_hs_hci_ack_evt[0];
+    param_len = ble_hs_hci_ack_evt[1];
     event_len = param_len + 2;
 
     /* Clear ack fields up front to silence spurious gcc warnings. */
@@ -174,12 +174,12 @@ ble_hs_hci_process_ack(uint16_t expected_opcode,
 
     switch (event_code) {
     case BLE_HCI_EVCODE_COMMAND_COMPLETE:
-        rc = ble_hs_hci_rx_cmd_complete(event_code, ble_hs_hci_ack,
+        rc = ble_hs_hci_rx_cmd_complete(event_code, ble_hs_hci_ack_evt,
                                          event_len, out_ack);
         break;
 
     case BLE_HCI_EVCODE_COMMAND_STATUS:
-        rc = ble_hs_hci_rx_cmd_status(event_code, ble_hs_hci_ack,
+        rc = ble_hs_hci_rx_cmd_status(event_code, ble_hs_hci_ack_evt,
                                        event_len, out_ack);
         break;
 
@@ -222,17 +222,17 @@ ble_hs_hci_wait_for_ack(void)
     if (ble_hs_hci_phony_ack_cb == NULL) {
         rc = BLE_HS_ETIMEOUT_HCI;
     } else {
-        ble_hs_hci_ack =
+        ble_hs_hci_ack_evt =
             ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_CMD);
-        BLE_HS_DBG_ASSERT(ble_hs_hci_ack != NULL);
-        rc = ble_hs_hci_phony_ack_cb(ble_hs_hci_ack, 260);
+        BLE_HS_DBG_ASSERT(ble_hs_hci_ack_evt != NULL);
+        rc = ble_hs_hci_phony_ack_cb(ble_hs_hci_ack_evt, 260);
     }
 #else
     rc = os_sem_pend(&ble_hs_hci_sem, BLE_HCI_CMD_TIMEOUT);
     switch (rc) {
     case OS_OK:
         rc = BLE_HS_ENONE;
-        BLE_HS_DBG_ASSERT(ble_hs_hci_ack != NULL);
+        BLE_HS_DBG_ASSERT(ble_hs_hci_ack_evt != NULL);
         break;
     case OS_TIMEOUT:
         rc = BLE_HS_ETIMEOUT_HCI;
@@ -257,7 +257,7 @@ ble_hs_hci_cmd_tx(void *cmd, void *evt_buf, uint8_t evt_buf_len,
 
     opcode = le16toh(cmd);
 
-    BLE_HS_DBG_ASSERT(ble_hs_hci_ack == NULL);
+    BLE_HS_DBG_ASSERT(ble_hs_hci_ack_evt == NULL);
     ble_hs_hci_lock();
 
     rc = ble_hs_hci_cmd_send_buf(cmd);
@@ -284,9 +284,9 @@ ble_hs_hci_cmd_tx(void *cmd, void *evt_buf, uint8_t evt_buf_len,
     rc = ack.bha_status;
 
 done:
-    if (ble_hs_hci_ack != NULL) {
-        ble_hci_trans_buf_free(ble_hs_hci_ack);
-        ble_hs_hci_ack = NULL;
+    if (ble_hs_hci_ack_evt != NULL) {
+        ble_hci_trans_buf_free(ble_hs_hci_ack_evt);
+        ble_hs_hci_ack_evt = NULL;
     }
 
     ble_hs_hci_unlock();
@@ -296,31 +296,23 @@ done:
 int
 ble_hs_hci_cmd_tx_empty_ack(void *cmd)
 {
-    int rc;
-
-    rc = ble_hs_hci_cmd_tx(cmd, NULL, 0, NULL);
-    if (rc != BLE_HS_ENONE) {
-        return rc;
-    }
-
-    return BLE_HS_ENONE;
+    return ble_hs_hci_cmd_tx(cmd, NULL, 0, NULL);
 }
 
 void
 ble_hs_hci_rx_ack(uint8_t *ack_ev)
 {
-    if (ble_hs_hci_sem.sem_tokens != 0) {
+    if (ble_hs_hci_ack_evt == NULL) {
+        /* Unblock the application now that the HCI command buffer is populated
+         * with the acknowledgement.
+         */
+        ble_hs_hci_ack_evt = ack_ev;
+    
+        os_sem_release(&ble_hs_hci_sem);
+    } else {
         /* This ack is unexpected; ignore it. */
         ble_hci_trans_buf_free(ack_ev);
-        return;
     }
-    BLE_HS_DBG_ASSERT(ble_hs_hci_ack == NULL);
-
-    /* Unblock the application now that the HCI command buffer is populated
-     * with the acknowledgement.
-     */
-    ble_hs_hci_ack = ack_ev;
-    os_sem_release(&ble_hs_hci_sem);
 }
 
 int

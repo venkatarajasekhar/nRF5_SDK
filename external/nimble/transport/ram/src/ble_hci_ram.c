@@ -34,7 +34,7 @@ static struct os_mempool ble_hci_ram_evt_lo_pool;
 static void *ble_hci_ram_evt_lo_buf;
 
 static uint8_t *ble_hci_ram_hs_cmd_buf;
-static uint8_t ble_hci_ram_hs_cmd_buf_alloced;
+static uint8_t ble_hci_ram_hs_cmd_buf_alloced = FALSE;
 
 void
 ble_hci_trans_cfg_hs(ble_hci_trans_rx_cmd_fn *cmd_cb,
@@ -85,7 +85,7 @@ ble_hci_trans_ll_evt_tx(uint8_t *hci_ev)
 int
 ble_hci_trans_hs_acl_tx(struct os_mbuf *om)
 {
-   int rc;
+    int rc;
 
     assert(ble_hci_ram_rx_acl_ll_cb != NULL);
 
@@ -126,7 +126,7 @@ ble_hci_trans_buf_alloc(int type)
 
     case BLE_HCI_TRANS_BUF_CMD:
         assert(!ble_hci_ram_hs_cmd_buf_alloced);
-        ble_hci_ram_hs_cmd_buf_alloced = 1;
+        ble_hci_ram_hs_cmd_buf_alloced = TRUE;
         buf = ble_hci_ram_hs_cmd_buf;
         break;
 
@@ -145,14 +145,14 @@ ble_hci_trans_buf_free(uint8_t *buf)
 
     if (buf == ble_hci_ram_hs_cmd_buf) {
         assert(ble_hci_ram_hs_cmd_buf_alloced);
-        ble_hci_ram_hs_cmd_buf_alloced = 0;
+        ble_hci_ram_hs_cmd_buf_alloced = FALSE;
     } else if (os_memblock_from(&ble_hci_ram_evt_hi_pool, buf)) {
         rc = os_memblock_put(&ble_hci_ram_evt_hi_pool, buf);
-        assert(rc == 0);
+        assert(rc == OS_OK);
     } else {
         assert(os_memblock_from(&ble_hci_ram_evt_lo_pool, buf));
         rc = os_memblock_put(&ble_hci_ram_evt_lo_pool, buf);
-        assert(rc == 0);
+        assert(rc == OS_OK);
     }
 }
 
@@ -167,7 +167,7 @@ ble_hci_ram_free_mem(void)
 
     free(ble_hci_ram_hs_cmd_buf);
     ble_hci_ram_hs_cmd_buf = NULL;
-    ble_hci_ram_hs_cmd_buf_alloced = 0;
+    ble_hci_ram_hs_cmd_buf_alloced = FALSE;
 }
 
 int
