@@ -61,7 +61,7 @@ typedef uint8_t ble_l2cap_chan_flags;
 typedef int ble_l2cap_rx_fn(uint16_t conn_handle, struct os_mbuf **rxom);
 
 struct ble_l2cap_chan {
-    SLIST_ENTRY(ble_l2cap_chan) blc_next;
+    struct list_head blc_node;
     uint16_t blc_cid;
     uint16_t blc_my_mtu;
     uint16_t blc_peer_mtu;      /* 0 if not exchanged. */
@@ -84,7 +84,9 @@ typedef int ble_l2cap_tx_fn(struct ble_hs_conn *conn,
 
 #define BLE_L2CAP_CHAN_F_TXED_MTU       0x01    /* We have sent our MTU. */
 
-SLIST_HEAD(ble_l2cap_chan_list, ble_l2cap_chan);
+struct ble_l2cap_chan_list {
+    struct list_head blc_hdr;
+};
 
 int ble_l2cap_parse_hdr(struct os_mbuf *om, int off,
                         struct ble_l2cap_hdr *l2cap_hdr);

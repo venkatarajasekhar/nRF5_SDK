@@ -162,7 +162,7 @@ ble_hs_id_addr(uint8_t id_addr_type, const uint8_t **out_id_addr,
         *out_is_nrpa = nrpa;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 /**
