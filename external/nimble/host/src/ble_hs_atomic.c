@@ -56,7 +56,7 @@ ble_hs_atomic_conn_flags(uint16_t conn_handle, ble_hs_conn_flags_t *out_flags)
     if (conn == NULL) {
         rc = BLE_HS_ENOTCONN;
     } else {
-        rc = 0;
+        rc = BLE_HS_ENONE;
         if (out_flags != NULL) {
             *out_flags = conn->bhc_flags;
         }

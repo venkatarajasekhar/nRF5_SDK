@@ -54,7 +54,7 @@ extern struct os_mempool ble_l2cap_chan_pool;
  */
 #define BLE_L2CAP_CID_BLACK_HOLE    0xffff
 
-#define BLE_L2CAP_HDR_SZ    4
+#define BLE_L2CAP_HDR_SZ            4
 
 typedef uint8_t ble_l2cap_chan_flags;
 

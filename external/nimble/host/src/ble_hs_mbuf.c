@@ -194,5 +194,5 @@ ble_hs_mbuf_pullup_base(struct os_mbuf **om, int base_len)
         return BLE_HS_ENOMEM;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }

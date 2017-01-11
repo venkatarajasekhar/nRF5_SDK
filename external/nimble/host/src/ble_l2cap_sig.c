@@ -58,7 +58,7 @@
 #define BLE_L2CAP_SIG_PROC_OP_MAX               1
 
 struct ble_l2cap_sig_proc {
-    STAILQ_ENTRY(ble_l2cap_sig_proc) next;
+    struct list_head node;
 
     uint32_t exp_os_ticks;
     uint16_t conn_handle;
@@ -73,7 +73,9 @@ struct ble_l2cap_sig_proc {
     };
 };
 
-STAILQ_HEAD(ble_l2cap_sig_proc_list, ble_l2cap_sig_proc);
+struct ble_l2cap_sig_proc_list {
+    struct list_head hdr;
+};
 
 static struct ble_l2cap_sig_proc_list ble_l2cap_sig_procs;
 
@@ -100,9 +102,9 @@ static ble_l2cap_sig_rx_fn * const ble_l2cap_sig_dispatch[] = {
     [BLE_L2CAP_SIG_OP_CREDIT_CONNECT_RSP]   = ble_l2cap_sig_rx_noop,
 };
 
-static uint8_t ble_l2cap_sig_cur_id;
+static uint8_t ble_l2cap_sig_cur_id = 0;
 
-static void *ble_l2cap_sig_proc_mem;
+static void *ble_l2cap_sig_proc_mem = NULL;
 static struct os_mempool ble_l2cap_sig_proc_pool;
 
 /*****************************************************************************
@@ -115,7 +117,7 @@ ble_l2cap_sig_dbg_assert_proc_not_inserted(struct ble_l2cap_sig_proc *proc)
 #if BLE_HS_DEBUG
     struct ble_l2cap_sig_proc *cur;
 
-    STAILQ_FOREACH(cur, &ble_l2cap_sig_procs, next) {
+    list_for_each_entry(cur, &ble_l2cap_sig_procs.hdr, node) {
         BLE_HS_DBG_ASSERT(cur != proc);
     }
 #endif
@@ -177,7 +179,7 @@ ble_l2cap_sig_proc_free(struct ble_l2cap_sig_proc *proc)
         ble_l2cap_sig_dbg_assert_proc_not_inserted(proc);
 
         rc = os_memblock_put(&ble_l2cap_sig_proc_pool, proc);
-        BLE_HS_DBG_ASSERT_EVAL(rc == 0);
+        BLE_HS_DBG_ASSERT_EVAL(rc == OS_OK);
     }
 }
 
@@ -187,7 +189,7 @@ ble_l2cap_sig_proc_insert(struct ble_l2cap_sig_proc *proc)
     ble_l2cap_sig_dbg_assert_proc_not_inserted(proc);
 
     BLE_HS_DBG_ASSERT(ble_hs_locked_by_cur_task());
-    STAILQ_INSERT_HEAD(&ble_l2cap_sig_procs, proc, next);
+    list_add(&proc->node, &ble_l2cap_sig_procs.hdr);
 }
 
 /**
@@ -199,25 +201,25 @@ ble_l2cap_sig_proc_insert(struct ble_l2cap_sig_proc *proc)
  * @param id                    The identifier to match against.
  *                                  0=Ignore this criterion.
  *
- * @return                      1 if the proc matches; 0 otherwise.
+ * @return                      TRUE if the proc matches; FALSE otherwise.
  */
 static int
 ble_l2cap_sig_proc_matches(struct ble_l2cap_sig_proc *proc,
                            uint16_t conn_handle, uint8_t op, uint8_t id)
 {
     if (conn_handle != proc->conn_handle) {
-        return 0;
+        return FALSE;
     }
 
     if (op != proc->op) {
-        return 0;
+        return FALSE;
     }
 
     if (id != 0 && id != proc->id) {
-        return 0;
+        return FALSE;
     }
 
-    return 1;
+    return TRUE;
 }
 
 /**
@@ -238,25 +240,19 @@ ble_l2cap_sig_proc_extract(uint16_t conn_handle, uint8_t op,
                            uint8_t identifier)
 {
     struct ble_l2cap_sig_proc *proc;
-    struct ble_l2cap_sig_proc *prev;
 
     ble_hs_lock();
 
-    prev = NULL;
-    STAILQ_FOREACH(proc, &ble_l2cap_sig_procs, next) {
+    list_for_each_entry(proc, &ble_l2cap_sig_procs.hdr, node) {
         if (ble_l2cap_sig_proc_matches(proc, conn_handle, op, identifier)) {
-            if (prev == NULL) {
-                STAILQ_REMOVE_HEAD(&ble_l2cap_sig_procs, next);
-            } else {
-                STAILQ_REMOVE_AFTER(&ble_l2cap_sig_procs, prev, next);
-            }
+            list_del(&proc->node);
             break;
         }
     }
 
     ble_hs_unlock();
 
-    return proc;
+    return (&proc->node == &ble_l2cap_sig_procs.hdr) ? NULL : proc;
 }
 
 static int
@@ -276,7 +272,7 @@ ble_l2cap_sig_update_call_cb(struct ble_l2cap_sig_proc *proc, int status)
 {
     BLE_HS_DBG_ASSERT(!ble_hs_locked_by_cur_task());
 
-    if (status != 0) {
+    if (status != BLE_HS_ENONE) {
         STATS_INC(ble_l2cap_stats, update_fail);
     }
 
@@ -299,15 +295,15 @@ ble_l2cap_sig_update_req_rx(uint16_t conn_handle,
     int sig_err;
     int rc;
 
-    l2cap_result = 0; /* Silence spurious gcc warning. */
+    l2cap_result = BLE_L2CAP_SIG_UPDATE_RSP_RESULT_ACCEPT; /* Silence spurious gcc warning. */
 
     rc = ble_hs_mbuf_pullup_base(om, BLE_L2CAP_SIG_UPDATE_REQ_SZ);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
     rc = ble_hs_atomic_conn_flags(conn_handle, &conn_flags);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
@@ -325,10 +321,10 @@ ble_l2cap_sig_update_req_rx(uint16_t conn_handle,
 
         /* Ask application if slave's connection parameters are acceptable. */
         rc = ble_gap_rx_l2cap_update_req(conn_handle, &params);
-        if (rc == 0) {
+        if (rc == BLE_HS_ENONE) {
             /* Application agrees to accept parameters; schedule update. */
             rc = ble_gap_update_params(conn_handle, &params);
-            if (rc != 0) {
+            if (rc != BLE_HS_ENONE) {
                 return rc;
             }
             l2cap_result = BLE_L2CAP_SIG_UPDATE_RSP_RESULT_ACCEPT;
@@ -373,7 +369,7 @@ ble_l2cap_sig_update_rsp_rx(uint16_t conn_handle,
     }
 
     rc = ble_hs_mbuf_pullup_base(om, BLE_L2CAP_SIG_UPDATE_RSP_SZ);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         cb_status = rc;
         goto done;
     }
@@ -382,13 +378,13 @@ ble_l2cap_sig_update_rsp_rx(uint16_t conn_handle,
 
     switch (rsp.result) {
     case BLE_L2CAP_SIG_UPDATE_RSP_RESULT_ACCEPT:
-        cb_status = 0;
-        rc = 0;
+        cb_status = BLE_HS_ENONE;
+        rc = BLE_HS_ENONE;
         break;
 
     case BLE_L2CAP_SIG_UPDATE_RSP_RESULT_REJECT:
         cb_status = BLE_HS_EREJECT;
-        rc = 0;
+        rc = BLE_HS_ENONE;
         break;
 
     default:
@@ -450,14 +446,14 @@ ble_l2cap_sig_update(uint16_t conn_handle,
     req.timeout_multiplier = params->timeout_multiplier;
 
     rc = ble_l2cap_sig_update_req_tx(conn, chan, proc->id, &req);
-    if (rc == 0) {
+    if (rc == BLE_HS_ENONE) {
         ble_l2cap_sig_proc_insert(proc);
     }
 
 done:
     ble_hs_unlock();
 
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         ble_l2cap_sig_proc_free(proc);
     }
 
@@ -479,7 +475,7 @@ ble_l2cap_sig_rx(uint16_t conn_handle, struct os_mbuf **om)
     BLE_HS_LOG(DEBUG, "\n");
 
     rc = ble_hs_mbuf_pullup_base(om, BLE_L2CAP_SIG_HDR_SZ);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
@@ -530,33 +526,20 @@ ble_l2cap_sig_create_chan(void)
 static void
 ble_l2cap_sig_extract_expired(struct ble_l2cap_sig_proc_list *dst_list)
 {
-    struct ble_l2cap_sig_proc *proc;
-    struct ble_l2cap_sig_proc *prev;
-    struct ble_l2cap_sig_proc *next;
+    struct ble_l2cap_sig_proc *cur, *tmp;
     uint32_t now;
     int32_t time_diff;
 
     now = os_time_get();
-    STAILQ_INIT(dst_list);
+    INIT_LIST_HEAD(dst_list);
 
     ble_hs_lock();
 
-    prev = NULL;
-    proc = STAILQ_FIRST(&ble_l2cap_sig_procs);
-    while (proc != NULL) {
-        next = STAILQ_NEXT(proc, next);
-    
-        time_diff = now - proc->exp_os_ticks;
+    list_for_each_entry_safe(cur, tmp, &ble_l2cap_sig_procs.hdr, node) {
+        time_diff = now - cur->exp_os_ticks;
         if (time_diff >= 0) {
-            if (prev == NULL) {
-                STAILQ_REMOVE_HEAD(&ble_l2cap_sig_procs, next);
-            } else {
-                STAILQ_REMOVE_AFTER(&ble_l2cap_sig_procs, prev, next);
-            }
-            STAILQ_INSERT_TAIL(dst_list, proc, next);
+            list_move_tail(&cur->node, &dst_list->hdr);
         }
-
-        proc = next;
     }
 
     ble_hs_unlock();
@@ -596,7 +579,7 @@ int32_t
 ble_l2cap_sig_heartbeat(void)
 {
     struct ble_l2cap_sig_proc_list temp_list;
-    struct ble_l2cap_sig_proc *proc;
+    struct ble_l2cap_sig_proc *proc, *tmp;
 
     /* Remove timed-out procedures from the main list and insert them into a
      * temporary list.
@@ -604,11 +587,10 @@ ble_l2cap_sig_heartbeat(void)
     ble_l2cap_sig_extract_expired(&temp_list);
 
     /* Report a failure for each timed out procedure. */
-    while ((proc = STAILQ_FIRST(&temp_list)) != NULL) {
+    list_for_each_entry_safe(proc, tmp, &temp_list.hdr, node) {
         STATS_INC(ble_l2cap_stats, proc_timeout);
         ble_l2cap_sig_update_call_cb(proc, BLE_HS_ETIMEOUT);
-
-        STAILQ_REMOVE_HEAD(&temp_list, next);
+        list_del(&proc->node);
         ble_l2cap_sig_proc_free(proc);
     }
 
@@ -620,9 +602,12 @@ ble_l2cap_sig_init(void)
 {
     int rc;
 
-    os_free(ble_l2cap_sig_proc_mem);
+    if (ble_l2cap_sig_proc_mem) {
+        os_free(ble_l2cap_sig_proc_mem);
+        ble_l2cap_sig_proc_mem = NULL;
+    }
 
-    STAILQ_INIT(&ble_l2cap_sig_procs);
+    INIT_LIST_HEAD(&ble_l2cap_sig_procs.hdr);
 
     if (g_ble_hs_cfg.max_l2cap_sig_procs > 0) {
         ble_l2cap_sig_proc_mem = os_malloc(
@@ -646,6 +631,9 @@ ble_l2cap_sig_init(void)
     return BLE_HS_ENONE;
 
 err:
-    os_free(ble_l2cap_sig_proc_mem);
+    if (ble_l2cap_sig_proc_mem) {
+        os_free(ble_l2cap_sig_proc_mem);
+        ble_l2cap_sig_proc_mem = NULL;
+    }
     return rc;
 }

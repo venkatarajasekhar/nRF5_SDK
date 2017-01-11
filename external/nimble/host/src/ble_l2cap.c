@@ -105,7 +105,7 @@ ble_l2cap_parse_hdr(struct os_mbuf *om, int off,
     int rc;
 
     rc = os_mbuf_copydata(om, off, sizeof *l2cap_hdr, l2cap_hdr);
-    if (rc != 0) {
+    if (rc != OS_OK) {
         return BLE_HS_EMSGSIZE;
     }
 
@@ -124,11 +124,9 @@ ble_l2cap_prepend_hdr(struct os_mbuf *om, uint16_t cid, uint16_t len)
     htole16(&hdr.blh_cid, cid);
 
     om = os_mbuf_prepend_pullup(om, sizeof hdr);
-    if (om == NULL) {
-        return NULL;
+    if (om != NULL) {
+        memcpy(om->om_data, &hdr, sizeof hdr);
     }
-
-    memcpy(om->om_data, &hdr, sizeof hdr);
 
     return om;
 }

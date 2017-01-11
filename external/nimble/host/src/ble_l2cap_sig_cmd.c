@@ -196,7 +196,7 @@ ble_l2cap_sig_update_req_tx(struct ble_hs_conn *conn,
     rc = ble_l2cap_sig_init_cmd(BLE_L2CAP_SIG_OP_UPDATE_REQ, id,
                                 BLE_L2CAP_SIG_UPDATE_REQ_SZ, &txom,
                                 &payload_buf);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
@@ -204,11 +204,11 @@ ble_l2cap_sig_update_req_tx(struct ble_hs_conn *conn,
                                    req);
 
     rc = ble_l2cap_tx(conn, chan, txom);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 static void
