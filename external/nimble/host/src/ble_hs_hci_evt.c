@@ -158,7 +158,7 @@ ble_hs_hci_evt_encrypt_change(uint8_t event_code, uint8_t *data, int len)
 
     evt.status = data[2];
     evt.connection_handle = le16toh(data + 3);
-    evt.encryption_enabled = data[5];
+    evt.encryption_enabled = !!data[5];
 
     ble_sm_enc_change_rx(&evt);
 

@@ -199,5 +199,5 @@ ble_hs_pvcy_our_irk(const uint8_t **out_irk)
     /* XXX: Return error if privacy not supported. */
 
     *out_irk = ble_hs_pvcy_irk;
-    return 0;
+    return BLE_HS_ENONE;
 }

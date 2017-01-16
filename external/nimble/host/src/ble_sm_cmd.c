@@ -148,7 +148,7 @@ ble_sm_pair_cmd_tx(uint16_t conn_handle, int is_req,
     int rc;
 
     rc = ble_sm_init_req(BLE_SM_PAIR_CMD_SZ, &txom);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return BLE_HS_ENOMEM;
     }
 
@@ -158,11 +158,11 @@ ble_sm_pair_cmd_tx(uint16_t conn_handle, int is_req,
     BLE_HS_DBG_ASSERT(ble_sm_pair_cmd_is_valid(cmd));
 
     rc = ble_sm_tx(conn_handle, txom);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 void
@@ -363,20 +363,20 @@ ble_sm_enc_info_tx(uint16_t conn_handle, struct ble_sm_enc_info *cmd)
     int rc;
 
     rc = ble_sm_init_req(BLE_SM_ENC_INFO_SZ, &txom);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return BLE_HS_ENOMEM;
     }
 
     ble_sm_enc_info_write(txom->om_data, txom->om_len, cmd);
 
-    BLE_SM_LOG_CMD(1, "enc info", conn_handle, ble_sm_enc_info_log, cmd);
+    BLE_SM_LOG_CMD(TRUE, "enc info", conn_handle, ble_sm_enc_info_log, cmd);
     
     rc = ble_sm_tx(conn_handle, txom);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return rc;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 void

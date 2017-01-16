@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include "nimble/nimble_opt.h"
 
+#define BLE_SM_ERR_NONE                         0x00
 #define BLE_SM_ERR_PASSKEY                      0x01
 #define BLE_SM_ERR_OOB                          0x02
 #define BLE_SM_ERR_AUTHREQ                      0x03
@@ -81,6 +82,8 @@
 #define BLE_SM_IOACT_DISP                       3
 #define BLE_SM_IOACT_NUMCMP                     4
 #define BLE_SM_IOACT_MAX_PLUS_ONE               5
+
+#define BLE_SM_INITIATOR_SLIP                   -1
 
 struct ble_sm_io {
     uint8_t action;
