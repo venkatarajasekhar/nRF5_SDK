@@ -82,7 +82,7 @@ ble_sm_alg_encrypt(uint8_t *key, uint8_t *plaintext, uint8_t *enc_data)
 
     swap_in_place(enc_data, 16);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 /**
@@ -112,7 +112,7 @@ ble_sm_alg_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len,
         return BLE_HS_EUNKNOWN;
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 int
@@ -147,7 +147,7 @@ ble_sm_alg_s1(uint8_t *k, uint8_t *r1, uint8_t *r2, uint8_t *out)
     ble_hs_log_flat_buf(out, 16);
     BLE_HS_LOG(DEBUG, "\n");
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 int
@@ -213,7 +213,7 @@ ble_sm_alg_c1(uint8_t *k, uint8_t *r,
     BLE_HS_LOG(DEBUG, "\n    out_enc_data=");
     ble_hs_log_flat_buf(out_enc_data, 16);
 
-    rc = 0;
+    rc = BLE_HS_ENONE;
 
 done:
     BLE_HS_LOG(DEBUG, "\n    rc=%d\n", rc);
@@ -262,7 +262,7 @@ ble_sm_alg_f4(uint8_t *u, uint8_t *v, uint8_t *x, uint8_t z,
     ble_hs_log_flat_buf(out_enc_data, 16);
     BLE_HS_LOG(DEBUG, "\n");
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 int
@@ -330,7 +330,7 @@ ble_sm_alg_f5(uint8_t *w, uint8_t *n1, uint8_t *n2, uint8_t a1t,
 
     swap_in_place(ltk, 16);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 int
@@ -378,7 +378,7 @@ ble_sm_alg_f6(const uint8_t *w, const uint8_t *n1, const uint8_t *n2,
 
     swap_in_place(check, 16);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 int
@@ -411,7 +411,7 @@ ble_sm_alg_g2(uint8_t *u, uint8_t *v, uint8_t *x, uint8_t *y,
     *passkey = be32toh(xs + 12) % 1000000;
     BLE_HS_LOG(DEBUG, "    passkey=%u\n", *passkey);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 int
@@ -434,7 +434,7 @@ ble_sm_alg_gen_dhkey(uint8_t *peer_pub_key_x, uint8_t *peer_pub_key_y,
 
     memcpy(out_dhkey, dh, 32);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 /**
@@ -450,7 +450,7 @@ ble_sm_alg_gen_key_pair(void *pub, uint32_t *priv)
 
     do {
         rc = ble_hs_hci_util_rand(random, sizeof random);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             return rc;
         }
 
@@ -465,7 +465,7 @@ ble_sm_alg_gen_key_pair(void *pub, uint32_t *priv)
     memcpy(pub + 0, pkey.x, 32);
     memcpy(pub + 32, pkey.y, 32);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 #endif

@@ -130,7 +130,7 @@ ble_sm_sc_io_action(struct ble_sm_proc *proc)
         break;
 
     default:
-        BLE_HS_DBG_ASSERT(0);
+        BLE_HS_DBG_ASSERT(FALSE);
         break;
     }
 
@@ -145,21 +145,21 @@ ble_sm_sc_ensure_keys_generated(void)
     if (!ble_sm_sc_keys_generated) {
         rc = ble_sm_gen_pub_priv(ble_sm_sc_pub_key.u32,
                                  ble_sm_sc_priv_key.u32);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             return rc;
         }
 
-        ble_sm_sc_keys_generated = 1;
+        ble_sm_sc_keys_generated = TRUE;
     }
 
     BLE_HS_LOG(DEBUG, "our pubkey=");
-    ble_hs_log_flat_buf(&ble_sm_sc_pub_key, 64);
+    ble_hs_log_flat_buf(&ble_sm_sc_pub_key, sizeof ble_sm_sc_pub_key);
     BLE_HS_LOG(DEBUG, "\n");
     BLE_HS_LOG(DEBUG, "our privkey=");
-    ble_hs_log_flat_buf(&ble_sm_sc_priv_key, 32);
+    ble_hs_log_flat_buf(&ble_sm_sc_priv_key, sizeof ble_sm_sc_priv_key);
     BLE_HS_LOG(DEBUG, "\n");
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 /* Initiator does not send a confirm when pairing algorithm is any of:
@@ -206,7 +206,7 @@ ble_sm_sc_gen_ri(struct ble_sm_proc *proc)
     case BLE_SM_PAIR_ALG_JW:
     case BLE_SM_PAIR_ALG_NUMCMP:
         proc->ri = 0;
-        return 0;
+        return BLE_HS_ENONE;
 
     case BLE_SM_PAIR_ALG_PASSKEY:
         BLE_HS_DBG_ASSERT(proc->passkey_bits_exchanged <
@@ -218,14 +218,14 @@ ble_sm_sc_gen_ri(struct ble_sm_proc *proc)
 
         proc->passkey_bits_exchanged++;
 
-        return 0;
+        return BLE_HS_ENONE;
 
     case BLE_SM_PAIR_ALG_OOB:
         rc = ble_hs_hci_util_rand(&proc->ri, 1);
         return rc;
 
     default:
-        BLE_HS_DBG_ASSERT(0);
+        BLE_HS_DBG_ASSERT(FALSE);
         return BLE_HS_EUNKNOWN;
     }
 }
@@ -237,26 +237,26 @@ ble_sm_sc_confirm_exec(struct ble_sm_proc *proc, struct ble_sm_result *res)
     int rc;
 
     rc = ble_sm_sc_gen_ri(proc);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         res->app_status = rc;
-        res->enc_cb = 1;
+        res->enc_cb = TRUE;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         return;
     }
 
     rc = ble_sm_alg_f4(ble_sm_sc_pub_key.u8, proc->pub_key_peer.x,
                        ble_sm_our_pair_rand(proc), proc->ri, cmd.value);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         res->app_status = rc;
-        res->enc_cb = 1;
+        res->enc_cb = TRUE;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         return;
     }
 
     rc = ble_sm_pair_confirm_tx(proc->conn_handle, &cmd);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         res->app_status = rc;
-        res->enc_cb = 1;
+        res->enc_cb = TRUE;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         return;
     }
@@ -281,9 +281,9 @@ ble_sm_sc_gen_numcmp(struct ble_sm_proc *proc, struct ble_sm_result *res)
     }
     res->app_status = ble_sm_alg_g2(pka, pkb, proc->randm, proc->rands,
                                     &res->passkey_params.numcmp);
-    if (res->app_status != 0) {
+    if (res->app_status != BLE_HS_ENONE) {
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
-        res->enc_cb = 1;
+        res->enc_cb = TRUE;
     }
 }
 
@@ -303,12 +303,12 @@ ble_sm_sc_random_advance(struct ble_sm_proc *proc)
     } else {
         proc->state = BLE_SM_PROC_STATE_CONFIRM;
         rc = ble_sm_gen_pair_rand(ble_sm_our_pair_rand(proc));
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             return rc;
         }
     }
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 void
@@ -318,21 +318,21 @@ ble_sm_sc_random_exec(struct ble_sm_proc *proc, struct ble_sm_result *res)
     uint8_t ioact;
     int rc;
 
-    memcpy(cmd.value, ble_sm_our_pair_rand(proc), 16);
+    memcpy(cmd.value, ble_sm_our_pair_rand(proc), sizeof(cmd.value));
 
     rc = ble_sm_pair_random_tx(proc->conn_handle, &cmd);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         res->app_status = rc;
-        res->enc_cb = 1;
+        res->enc_cb = TRUE;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         return;
     }
 
     if (!(proc->flags & BLE_SM_PROC_F_INITIATOR)) {
         rc = ble_sm_sc_random_advance(proc);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             res->app_status = rc;
-            res->enc_cb = 1;
+            res->enc_cb = TRUE;
             res->sm_err = BLE_SM_ERR_UNSPECIFIED;
             return;
         }
@@ -363,24 +363,24 @@ ble_sm_sc_random_rx(struct ble_sm_proc *proc, struct ble_sm_result *res)
         ble_sm_sc_responder_verifies_random(proc)) {
 
         BLE_HS_LOG(DEBUG, "tk=");
-        ble_hs_log_flat_buf(proc->tk, 32);
+        ble_hs_log_flat_buf(proc->tk, sizeof(proc->tk));
         BLE_HS_LOG(DEBUG, "\n");
 
         rc = ble_sm_alg_f4(proc->pub_key_peer.x, ble_sm_sc_pub_key.u8,
                            ble_sm_peer_pair_rand(proc), proc->ri,
                            confirm_val);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             res->app_status = rc;
             res->sm_err = BLE_SM_ERR_UNSPECIFIED;
-            res->enc_cb = 1;
+            res->enc_cb = TRUE;
             return;
         }
 
-        if (memcmp(proc->confirm_peer, confirm_val, 16) != 0) {
+        if (memcmp(proc->confirm_peer, confirm_val, sizeof(proc->confirm_peer)) != 0) {
             /* Random number mismatch. */
             res->app_status = BLE_HS_SM_US_ERR(BLE_SM_ERR_CONFIRM_MISMATCH);
             res->sm_err = BLE_SM_ERR_CONFIRM_MISMATCH;
-            res->enc_cb = 1;
+            res->enc_cb = TRUE;
             return;
         }
     }
@@ -389,25 +389,25 @@ ble_sm_sc_random_rx(struct ble_sm_proc *proc, struct ble_sm_result *res)
     ble_sm_ia_ra(proc, &iat, ia, &rat, ra);
     rc = ble_sm_alg_f5(proc->dhkey, proc->randm, proc->rands,
                        iat, ia, rat, ra, proc->mackey, proc->ltk);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         res->app_status = rc;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
-        res->enc_cb = 1;
+        res->enc_cb = TRUE;
         return;
     }
 
     /* Ensure the ltk gets persisted when the pairing procedure succeeds. */
     memcpy(proc->our_keys.ltk, proc->ltk, sizeof proc->our_keys.ltk);
-    proc->our_keys.ltk_valid = 1;
-    proc->our_keys.ediv = 0;
-    proc->our_keys.rand_val = 0;
-    proc->our_keys.ediv_rand_valid = 1;
+    proc->our_keys.ltk_valid = TRUE;
+    proc->our_keys.ediv = FALSE;
+    proc->our_keys.rand_val = FALSE;
+    proc->our_keys.ediv_rand_valid = TRUE;
 
     memcpy(proc->peer_keys.ltk, proc->ltk, sizeof proc->peer_keys.ltk);
-    proc->peer_keys.ltk_valid = 1;
-    proc->peer_keys.ediv = 0;
-    proc->peer_keys.rand_val = 0;
-    proc->peer_keys.ediv_rand_valid = 1;
+    proc->peer_keys.ltk_valid = TRUE;
+    proc->peer_keys.ediv = FALSE;
+    proc->peer_keys.rand_val = FALSE;
+    proc->peer_keys.ediv_rand_valid = TRUE;
 
     if (proc->flags & BLE_SM_PROC_F_INITIATOR) {
         ble_sm_sc_random_advance(proc);
@@ -420,10 +420,10 @@ ble_sm_sc_random_rx(struct ble_sm_proc *proc, struct ble_sm_result *res)
             BLE_HS_DBG_ASSERT(ioact == BLE_SM_IOACT_NUMCMP);
             ble_sm_sc_gen_numcmp(proc, res);
         } else {
-            res->execute = 1;
+            res->execute = TRUE;
         }
     } else {
-        res->execute = 1;
+        res->execute = TRUE;
     }
 }
 
@@ -435,17 +435,17 @@ ble_sm_sc_public_key_exec(struct ble_sm_proc *proc, struct ble_sm_result *res,
     uint8_t ioact;
 
     res->app_status = ble_sm_sc_ensure_keys_generated();
-    if (res->app_status != 0) {
-        res->enc_cb = 1;
+    if (res->app_status != BLE_HS_ENONE) {
+        res->enc_cb = TRUE;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         return;
     }
 
-    memcpy(cmd.x, ble_sm_sc_pub_key.u8 + 0, 32);
-    memcpy(cmd.y, ble_sm_sc_pub_key.u8 + 32, 32);
+    memcpy(cmd.x, ble_sm_sc_pub_key.u8 + 0, sizeof(cmd.x));
+    memcpy(cmd.y, ble_sm_sc_pub_key.u8 + 32, sizeof(cmd.y));
     res->app_status = ble_sm_public_key_tx(proc->conn_handle, &cmd);
-    if (res->app_status != 0) {
-        res->enc_cb = 1;
+    if (res->app_status != BLE_HS_ENONE) {
+        res->enc_cb = TRUE;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         return;
     }
@@ -461,7 +461,7 @@ ble_sm_sc_public_key_exec(struct ble_sm_proc *proc, struct ble_sm_result *res,
         if (ble_sm_proc_can_advance(proc) &&
             !ble_sm_sc_initiator_txes_confirm(proc)) {
 
-            res->execute = 1;
+            res->execute = TRUE;
         }
     }
 }
@@ -477,24 +477,24 @@ ble_sm_sc_public_key_rx(uint16_t conn_handle, uint8_t op, struct os_mbuf **om,
     int rc;
 
     res->app_status = ble_hs_mbuf_pullup_base(om, BLE_SM_PUBLIC_KEY_SZ);
-    if (res->app_status != 0) {
-        res->enc_cb = 1;
+    if (res->app_status != BLE_HS_ENONE) {
+        res->enc_cb = TRUE;
         return;
     }
 
     res->app_status = ble_sm_sc_ensure_keys_generated();
-    if (res->app_status != 0) {
-        res->enc_cb = 1;
+    if (res->app_status != BLE_HS_ENONE) {
+        res->enc_cb = TRUE;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         return;
     }
 
     ble_sm_public_key_parse((*om)->om_data, (*om)->om_len, &cmd);
-    BLE_SM_LOG_CMD(0, "public key", conn_handle, ble_sm_public_key_log, &cmd);
+    BLE_SM_LOG_CMD(FALSE, "public key", conn_handle, ble_sm_public_key_log, &cmd);
 
     ble_hs_lock();
-    proc = ble_sm_proc_find(conn_handle, BLE_SM_PROC_STATE_PUBLIC_KEY, -1,
-                            &prev);
+    proc = ble_sm_proc_find(conn_handle, BLE_SM_PROC_STATE_PUBLIC_KEY,
+                            BLE_SM_INITIATOR_SLIP, &prev);
     if (proc == NULL) {
         res->app_status = BLE_HS_ENOENT;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
@@ -504,10 +504,10 @@ ble_sm_sc_public_key_rx(uint16_t conn_handle, uint8_t op, struct os_mbuf **om,
                                   proc->pub_key_peer.y,
                                   ble_sm_sc_priv_key.u32,
                                   proc->dhkey);
-        if (rc != 0) {
+        if (rc != BLE_HS_ENONE) {
             res->app_status = BLE_HS_SM_US_ERR(BLE_SM_ERR_DHKEY);
             res->sm_err = BLE_SM_ERR_DHKEY;
-            res->enc_cb = 1;
+            res->enc_cb = TRUE;
         } else {
             if (proc->flags & BLE_SM_PROC_F_INITIATOR) {
                 proc->state = BLE_SM_PROC_STATE_CONFIRM;
@@ -520,10 +520,10 @@ ble_sm_sc_public_key_rx(uint16_t conn_handle, uint8_t op, struct os_mbuf **om,
                 if (ble_sm_proc_can_advance(proc) &&
                     ble_sm_sc_initiator_txes_confirm(proc)) {
 
-                    res->execute = 1;
+                    res->execute = TRUE;
                 }
             } else {
-                res->execute = 1;
+                res->execute = TRUE;
             }
         }
     }
@@ -585,12 +585,12 @@ ble_sm_sc_dhkey_check_exec(struct ble_sm_proc *proc, struct ble_sm_result *res,
                        our_id_addr_type, our_ota_addr,
                        peer_id_addr_type, peer_ota_addr,
                        cmd.value);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
     rc = ble_sm_dhkey_check_tx(proc->conn_handle, &cmd);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         goto err;
     }
 
@@ -602,7 +602,7 @@ ble_sm_sc_dhkey_check_exec(struct ble_sm_proc *proc, struct ble_sm_result *res,
 
 err:
     res->app_status = rc;
-    res->enc_cb = 1;
+    res->enc_cb = TRUE;
     res->sm_err = BLE_SM_ERR_UNSPECIFIED;
 }
 
@@ -631,7 +631,7 @@ ble_sm_dhkey_check_process(struct ble_sm_proc *proc,
                           &peer_id_addr_type,
                           &peer_ota_addr);
     BLE_HS_LOG(DEBUG, "tk=");
-    ble_hs_log_flat_buf(proc->tk, 32);
+    ble_hs_log_flat_buf(proc->tk, sizeof(proc->tk));
     BLE_HS_LOG(DEBUG, "\n");
 
     res->app_status = ble_sm_alg_f6(proc->mackey,
@@ -641,17 +641,17 @@ ble_sm_dhkey_check_process(struct ble_sm_proc *proc,
                                     peer_id_addr_type, peer_ota_addr,
                                     our_id_addr_type, our_ota_addr,
                                     exp_value);
-    if (res->app_status != 0) {
+    if (res->app_status != BLE_HS_ENONE) {
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
-        res->enc_cb = 1;
+        res->enc_cb = TRUE;
         return;
     }
 
-    if (memcmp(cmd->value, exp_value, 16) != 0) {
+    if (memcmp(cmd->value, exp_value, sizeof(exp_value)) != 0) {
         /* Random number mismatch. */
         res->sm_err = BLE_SM_ERR_DHKEY;
         res->app_status = BLE_HS_SM_US_ERR(BLE_SM_ERR_DHKEY);
-        res->enc_cb = 1;
+        res->enc_cb = TRUE;
         return;
     }
 
@@ -666,7 +666,7 @@ ble_sm_dhkey_check_process(struct ble_sm_proc *proc,
             proc->state = BLE_SM_PROC_STATE_ENC_START;
         }
 
-        res->execute = 1;
+        res->execute = TRUE;
     }
 }
 
@@ -679,14 +679,14 @@ ble_sm_sc_dhkey_check_rx(uint16_t conn_handle, uint8_t op, struct os_mbuf **om,
     struct ble_sm_proc *prev;
 
     res->app_status = ble_hs_mbuf_pullup_base(om, BLE_SM_DHKEY_CHECK_SZ);
-    if (res->app_status != 0) {
-        res->enc_cb = 1;
+    if (res->app_status != BLE_HS_ENONE) {
+        res->enc_cb = TRUE;
         res->sm_err = BLE_SM_ERR_UNSPECIFIED;
         return;
     }
 
     ble_sm_dhkey_check_parse((*om)->om_data, (*om)->om_len, &cmd);
-    BLE_SM_LOG_CMD(0, "dhkey check", conn_handle, ble_sm_dhkey_check_log,
+    BLE_SM_LOG_CMD(FALSE, "dhkey check", conn_handle, ble_sm_dhkey_check_log,
                    &cmd);
 
     ble_hs_lock();
