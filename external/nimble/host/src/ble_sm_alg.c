@@ -205,7 +205,7 @@ ble_sm_alg_c1(uint8_t *k, uint8_t *r,
     ble_sm_alg_xor_128(out_enc_data, p2, out_enc_data);
 
     rc = ble_sm_alg_encrypt(k, out_enc_data, out_enc_data);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         rc = BLE_HS_EUNKNOWN;
         goto done;
     }
@@ -252,7 +252,7 @@ ble_sm_alg_f4(uint8_t *u, uint8_t *v, uint8_t *x, uint8_t z,
     swap_buf(xs, x, 16);
 
     rc = ble_sm_alg_aes_cmac(xs, m, sizeof(m), out_enc_data);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return BLE_HS_EUNKNOWN;
     }
 
@@ -296,7 +296,7 @@ ble_sm_alg_f5(uint8_t *w, uint8_t *n1, uint8_t *n2, uint8_t a1t,
     swap_buf(ws, w, 32);
 
     rc = ble_sm_alg_aes_cmac(salt, ws, 32, t);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return BLE_HS_EUNKNOWN;
     }
 
@@ -402,7 +402,7 @@ ble_sm_alg_g2(uint8_t *u, uint8_t *v, uint8_t *x, uint8_t *y,
 
     /* reuse xs (key) as buffer for result */
     rc = ble_sm_alg_aes_cmac(xs, m, sizeof(m), xs);
-    if (rc != 0) {
+    if (rc != BLE_HS_ENONE) {
         return BLE_HS_EUNKNOWN;
     }
 
