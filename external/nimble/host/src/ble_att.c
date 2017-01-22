@@ -498,7 +498,7 @@ ble_att_set_preferred_mtu(uint16_t mtu)
 {
     struct ble_l2cap_chan *chan;
     struct ble_hs_conn *conn;
-    int i;
+    int i = 0;
 
     if (mtu < BLE_ATT_MTU_DFLT) {
         return BLE_HS_EINVAL;
@@ -512,16 +512,13 @@ ble_att_set_preferred_mtu(uint16_t mtu)
     /* Set my_mtu for established connections that haven't exchanged. */
     ble_hs_lock();
 
-    i = 0;
-    while ((conn = ble_hs_conn_find_by_idx(i)) != NULL) {
+    while ((conn = ble_hs_conn_find_by_idx(i++)) != NULL) {
         chan = ble_hs_conn_chan_find(conn, BLE_L2CAP_CID_ATT);
         BLE_HS_DBG_ASSERT(chan != NULL);
 
         if (!(chan->blc_flags & BLE_L2CAP_CHAN_F_TXED_MTU)) {
             chan->blc_my_mtu = mtu;
         }
-
-        i++;
     }
 
     ble_hs_unlock();
@@ -535,14 +532,12 @@ ble_att_create_chan(void)
     struct ble_l2cap_chan *chan;
 
     chan = ble_l2cap_chan_alloc();
-    if (chan == NULL) {
-        return NULL;
+    if (chan) {
+        chan->blc_cid = BLE_L2CAP_CID_ATT;
+        chan->blc_my_mtu = ble_att_preferred_mtu_val;
+        chan->blc_default_mtu = BLE_ATT_MTU_DFLT;
+        chan->blc_rx_fn = ble_att_rx;
     }
-
-    chan->blc_cid = BLE_L2CAP_CID_ATT;
-    chan->blc_my_mtu = ble_att_preferred_mtu_val;
-    chan->blc_default_mtu = BLE_ATT_MTU_DFLT;
-    chan->blc_rx_fn = ble_att_rx;
 
     return chan;
 }
