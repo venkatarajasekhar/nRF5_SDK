@@ -102,7 +102,7 @@ struct stats_ble_att_stats {
 extern struct stats_ble_att_stats STATS_VARIABLE(ble_att_stats);
 
 struct ble_att_prep_entry {
-    SLIST_ENTRY(ble_att_prep_entry) bape_next;
+    struct list_head bape_node;
     uint16_t bape_handle;
     uint16_t bape_offset;
 
@@ -112,7 +112,9 @@ struct ble_att_prep_entry {
     struct os_mbuf *bape_value;
 };
 
-SLIST_HEAD(ble_att_prep_entry_list, ble_att_prep_entry);
+struct ble_att_prep_entry_list {
+    struct list_head bape_hdr;
+};
 
 struct ble_att_svr_conn {
     /** This list is sorted by attribute handle ID. */

@@ -97,7 +97,7 @@ ble_uuid_16_to_128(uint16_t uuid16, void *out_uuid128)
     memcpy(u8ptr, ble_uuid_base, 16);
     htole16(u8ptr + 12, uuid16);
 
-    return 0;
+    return BLE_HS_ENONE;
 }
 
 int

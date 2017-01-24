@@ -28,6 +28,7 @@ struct os_mbuf;
 #define BLE_ATT_UUID_INCLUDE                0x2802
 #define BLE_ATT_UUID_CHARACTERISTIC         0x2803
 
+#define BLE_ATT_ERR_NONE                    0x00
 #define BLE_ATT_ERR_INVALID_HANDLE          0x01
 #define BLE_ATT_ERR_READ_NOT_PERMITTED      0x02
 #define BLE_ATT_ERR_WRITE_NOT_PERMITTED     0x03

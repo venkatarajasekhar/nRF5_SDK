@@ -413,15 +413,13 @@ ble_att_mtu(uint16_t conn_handle)
 {
     struct ble_l2cap_chan *chan;
     struct ble_hs_conn *conn;
-    uint16_t mtu;
+    uint16_t mtu = 0;
 
     ble_hs_lock();
 
     ble_att_conn_chan_find(conn_handle, &conn, &chan);
     if (chan != NULL) {
         mtu = ble_l2cap_chan_mtu(chan);
-    } else {
-        mtu = 0;
     }
 
     ble_hs_unlock();
