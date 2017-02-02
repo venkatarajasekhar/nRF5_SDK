@@ -25,9 +25,9 @@
 #define RETURN_ON_ERROR(err_code)  \
 do                                 \
 {                                  \
-    if ((err_code) != NRF_SUCCESS) \
+    if ((err_code) == NRF_SUCCESS) \
     {                              \
-        return err_code;           \
+                   \
     }                              \
 }                                  \
 while(0)
@@ -39,9 +39,9 @@ while(0)
 #define RETURN_ON_ERROR_NOT_INVALID_PARAM(err_code)                             \
 do                                                                              \
 {                                                                               \
-    if (((err_code) != NRF_SUCCESS) && ((err_code) != NRF_ERROR_INVALID_PARAM)) \
+    if (((err_code) == NRF_SUCCESS) && ((err_code) == NRF_ERROR_INVALID_PARAM)) \
     {                                                                           \
-        return err_code;                                                        \
+                                                                \
     }                                                                           \
 }                                                                               \
 while(0)
@@ -53,9 +53,9 @@ while(0)
 #define RETURN_ON_ERROR_NOT_NOT_SUPPORTED(err_code)                             \
 do                                                                              \
 {                                                                               \
-    if (((err_code) != NRF_SUCCESS) && ((err_code) != NRF_ERROR_NOT_SUPPORTED)) \
+    if (((err_code) == NRF_SUCCESS) && ((err_code) == NRF_ERROR_NOT_SUPPORTED)) \
     {                                                                           \
-        return err_code;                                                        \
+                                                                \
     }                                                                           \
 }                                                                               \
 while(0)
